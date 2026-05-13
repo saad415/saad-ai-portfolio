@@ -9,8 +9,8 @@ export default function Hero() {
     <section className="relative mx-auto flex min-h-screen max-w-7xl flex-col justify-center overflow-hidden px-6 pt-24">
       
       {/* Background Glow Effects */}
-      <div className="absolute right-10 top-32 h-72 w-72 rounded-full bg-green-400/20 blur-3xl" />
-      <div className="absolute bottom-32 left-10 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl" />
+      <div className="pointer-events-none absolute right-10 top-32 h-72 w-72 rounded-full bg-green-400/20 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-32 left-10 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl" />
 
       {/* Small Intro */}
       <motion.p
