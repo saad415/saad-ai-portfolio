@@ -22,6 +22,7 @@ export default function SpineDemoPage() {
   const [fileName, setFileName] = useState<string>("");
   const [isRunning, setIsRunning] = useState(false);
   const [landmarks, setLandmarks] = useState<Landmark[]>([]);
+  const [sliceIndex, setSliceIndex] = useState(41);
 
   const runMockInference = () => {
     setIsRunning(true);
@@ -81,14 +82,18 @@ export default function SpineDemoPage() {
                 className="hidden"
                 onChange={(event) => {
                   const file = event.target.files?.[0];
-                  if (file) setFileName(file.name);
+                  if (file) {
+                    setFileName(file.name);
+                    setLandmarks([]);
+                  }
                 }}
               />
             </label>
 
             {fileName && (
               <p className="mt-4 rounded-xl bg-white/5 p-3 text-sm text-gray-300">
-                Selected file: <span className="text-green-400">{fileName}</span>
+                Selected file:{" "}
+                <span className="text-green-400">{fileName}</span>
               </p>
             )}
 
@@ -109,34 +114,56 @@ export default function SpineDemoPage() {
             </div>
 
             {landmarks.length === 0 ? (
-              <div className="mt-8 flex h-80 items-center justify-center rounded-2xl border border-white/10 bg-black/40 text-center text-gray-500">
+              <div className="mt-8 flex h-80 items-center justify-center rounded-2xl border border-white/10 bg-black/40 px-6 text-center text-gray-500">
                 Upload a volume and run inference to view predicted landmarks.
               </div>
             ) : (
-              <div className="mt-8 overflow-hidden rounded-2xl border border-white/10">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-white/5 text-gray-300">
-                    <tr>
-                      <th className="p-4">Landmark</th>
-                      <th className="p-4">X</th>
-                      <th className="p-4">Y</th>
-                      <th className="p-4">Z</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {landmarks.map((point) => (
-                      <tr key={point.label} className="border-t border-white/10">
-                        <td className="p-4 font-semibold text-green-400">
-                          {point.label}
-                        </td>
-                        <td className="p-4 text-gray-300">{point.x}</td>
-                        <td className="p-4 text-gray-300">{point.y}</td>
-                        <td className="p-4 text-gray-300">{point.z}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                <div className="mt-8 rounded-2xl border border-white/10 bg-black/40 p-4">
+                  <div className="relative mx-auto h-80 max-w-md overflow-hidden rounded-xl bg-gradient-to-br from-gray-800 via-gray-900 to-black">
+                    <div className="absolute inset-8 rounded-full border border-gray-600/60" />
+                    <div className="absolute left-1/2 top-8 h-64 w-24 -translate-x-1/2 rounded-full border border-gray-500/50" />
+
+                    {landmarks
+                      .filter((point) => Math.abs(point.z - sliceIndex) <= 2)
+                      .map((point) => (
+                        <div
+                          key={point.label}
+                          className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-1"
+                          style={{
+                            left: `${(point.x / 180) * 100}%`,
+                            top: `${(point.y / 160) * 100}%`,
+                          }}
+                        >
+                          <span className="h-3 w-3 rounded-full bg-green-400 shadow-[0_0_15px_rgba(74,222,128,0.9)]" />
+                          <span className="text-xs font-bold text-green-400">
+                            {point.label}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+
+                  <div className="mt-5">
+                    <div className="mb-2 flex justify-between text-sm text-gray-400">
+                      <span>Slice viewer</span>
+                      <span>Z = {sliceIndex}</span>
+                    </div>
+
+                    <input
+                      type="range"
+                      min="35"
+                      max="70"
+                      value={sliceIndex}
+                      onChange={(event) =>
+                        setSliceIndex(Number(event.target.value))
+                      }
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
+                
+              </>
             )}
           </div>
         </div>
