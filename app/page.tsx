@@ -2,11 +2,13 @@ import Hero from "@/components/Hero";
 import Navbar from "@/components/Navbar";
 import ProjectCard from "@/components/ProjectCard";
 import { projects } from "@/data/projects";
+import Stats from "@/components/Stats";
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-black text-white">
       <Navbar />
+      <Stats />
       <Hero />
 
       <section id="about" className="mx-auto max-w-7xl px-6 py-32">

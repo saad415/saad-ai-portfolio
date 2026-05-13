@@ -5,7 +5,7 @@ export const projects = [
     description:
       "3D U-Net model for automatic lumbosacral vertebra landmark localization in pelvic MRI using heatmap regression and S1-anchored labeling.",
     tech: ["PyTorch", "3D U-Net", "MRI", "Heatmaps", "Python"],
-    href: "#",
+    href: "/projects/spine-demo",
   },
   {
     title: "Uterine Landmark Detection",
