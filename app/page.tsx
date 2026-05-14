@@ -8,8 +8,8 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-black text-white">
       <Navbar />
-      <Stats />
       <Hero />
+      <Stats />
 
       <section id="about" className="mx-auto max-w-7xl px-6 py-32">
         <h2 className="text-4xl font-bold">About</h2>
