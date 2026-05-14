@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Brain, ChevronLeft, ChevronRight } from "lucide-react";
-import { spineProject } from "@/app/projects/spine-demo/spine_details";
+
 const samples = [
   {
     id: "case-01",
@@ -40,39 +40,23 @@ const samples = [
     confidence: "0.89",
     labels: ["S1", "S2"],
   },
-  {
-    id: "case-06",
-    title: "Anchored S1 sequence",
-    image: "/showcase/spine/case-06.png",
-    confidence: "0.95",
-    labels: ["L5", "S1"],
-  },
+  // case-06 removed — file missing from /public
 ];
 
 export default function SpineShowcase() {
   const [activeIndex, setActiveIndex] = useState(0);
-
   const active = samples[activeIndex];
 
-  const goPrevious = () => {
-    setActiveIndex((currentIndex) =>
-      currentIndex === 0 ? samples.length - 1 : currentIndex - 1
-    );
-  };
+  const goPrevious = () =>
+    setActiveIndex((i) => (i === 0 ? samples.length - 1 : i - 1));
 
-  const goNext = () => {
-    setActiveIndex((currentIndex) =>
-      currentIndex === samples.length - 1 ? 0 : currentIndex + 1
-    );
-  };
+  const goNext = () =>
+    setActiveIndex((i) => (i === samples.length - 1 ? 0 : i + 1));
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setActiveIndex((currentIndex) =>
-        currentIndex === samples.length - 1 ? 0 : currentIndex + 1
-      );
+      setActiveIndex((i) => (i === samples.length - 1 ? 0 : i + 1));
     }, 1500);
-
     return () => window.clearInterval(timer);
   }, []);
 
@@ -80,19 +64,19 @@ export default function SpineShowcase() {
     <div className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-5 shadow-2xl shadow-green-950/30 backdrop-blur">
       <div className="mb-4 flex items-center justify-between text-xs text-zinc-500">
         <span>LIVE SYSTEM SNAPSHOT</span>
-
         <span className="rounded-full bg-green-400/10 px-3 py-1 text-green-400">
           inference-ready
         </span>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-white/10 bg-black">
-        <div className="relative aspect-[4/3] bg-black">
+        <div className="relative aspect-[16/10] bg-black">
           <Image
             key={active.id}
             src={active.image}
             alt={active.title}
             fill
+            sizes="(max-width: 768px) 100vw, 50vw"
             priority={activeIndex === 0}
             className="object-contain p-3 transition duration-700 ease-out"
           />
@@ -123,10 +107,8 @@ export default function SpineShowcase() {
                 <Brain size={14} className="text-green-400" />
                 Multi-task 3D U-Net
               </span>
-
               <span>confidence {active.confidence}</span>
             </div>
-
             <div className="flex flex-wrap gap-2">
               {active.labels.map((label) => (
                 <span

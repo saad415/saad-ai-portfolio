@@ -1,89 +1,155 @@
 ﻿"use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Activity, Brain, Server } from "lucide-react";
-import { FaGithub } from "react-icons/fa";
-import SpineShowcase from "./SpineShowcase";
+import { ArrowRight, MapPin, Download } from "lucide-react";
+import { FaGithub, FaLinkedin } from "react-icons/fa";
+import Image from "next/image";
 
-const pipeline = [
-  { icon: Brain, label: "3D MRI input" },
-  { icon: Activity, label: "Landmark inference" },
-  { icon: Server, label: "FastAPI + PyTorch" },
+const roles = ["AI Engineer", "Medical Imaging Researcher", "Full-Stack Developer"];
+
+const stats = [
+  { value: "3D",   label: "MRI Analysis" },
+  { value: "96%",  label: "Model Accuracy" },
+  { value: "Live", label: "Inference API" },
 ];
+
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 24 },
+  animate: { opacity: 1, y: 0 },
+  transition: { delay, duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+} as const);
 
 export default function Hero() {
   return (
-    <section className="relative mx-auto grid min-h-screen max-w-7xl items-center gap-16 overflow-hidden px-6 pt-28 lg:grid-cols-[1.05fr_0.95fr]">
-      <div className="pointer-events-none absolute left-1/2 top-20 h-96 w-96 -translate-x-1/2 rounded-full bg-green-400/10 blur-3xl" />
+    <section className="relative w-full overflow-hidden px-[5vw] pt-20 pb-10">
+      {/* Background glows */}
+      <div className="pointer-events-none absolute left-0 top-0 h-[600px] w-[600px] -translate-x-1/4 -translate-y-1/4 rounded-full bg-green-500/5 blur-[120px]" />
+      <div className="pointer-events-none absolute right-0 top-1/2 h-96 w-96 translate-x-1/4 rounded-full bg-green-400/5 blur-[100px]" />
 
-      <div>
-        <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-5 text-sm uppercase tracking-[0.35em] text-green-400"
-        >
-          AI Systems • Medical Imaging • Full Stack Inference
-        </motion.p>
+      {/* ── Hero: text left · photo right ── */}
+      <div className="grid items-center gap-[4vw] lg:grid-cols-[1fr_40%] lg:min-h-[85vh]">
 
-        <motion.h1
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="text-balance text-5xl font-semibold leading-[0.95] tracking-tight md:text-7xl"
-        >
-          Building AI systems that move from research notebooks to usable products.
-        </motion.h1>
+        {/* ── LEFT: text ── */}
+        <div>
+          <motion.div {...fadeUp(0.1)} className="flex flex-wrap items-center gap-3">
+            <span className="rounded-full bg-green-400/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.3em] text-green-400">
+              Available for opportunities
+            </span>
+            <span className="flex items-center gap-1.5 text-xs text-zinc-500">
+              <MapPin size={11} />
+              Remote / Worldwide
+            </span>
+          </motion.div>
 
-        <motion.p
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mt-7 max-w-2xl text-lg leading-8 text-zinc-400"
-        >
-          I work across deep learning, medical image analysis, backend inference
-          APIs, and interactive web interfaces — turning trained models into
-          systems people can actually use.
-        </motion.p>
+          <motion.h1
+            {...fadeUp(0.15)}
+            className="mt-4 font-semibold leading-[1.05] tracking-tight text-white"
+            style={{ fontSize: "clamp(1.8rem, 4vw, 6rem)" }}
+          >
+            Saad Ahmad
+          </motion.h1>
 
+          <motion.div {...fadeUp(0.2)} className="mt-3 flex items-center gap-3">
+            <span className="h-px w-8 bg-green-400/50" />
+            <span
+              className="font-medium text-green-400"
+              style={{ fontSize: "clamp(0.8rem, 1.2vw, 1.2rem)" }}
+            >
+              {roles[0]} &nbsp;·&nbsp; {roles[1]}
+            </span>
+          </motion.div>
+
+          <motion.p
+            {...fadeUp(0.25)}
+            className="mt-5 leading-7 text-zinc-400"
+            style={{ fontSize: "clamp(0.95rem, 1.2vw, 1.25rem)", maxWidth: "55ch" }}
+          >
+            I build AI systems that move from research notebooks to usable products —
+            spanning deep learning, medical image analysis, backend inference APIs,
+            and interactive web interfaces.
+          </motion.p>
+
+          {/* Quick stats */}
+          <motion.div {...fadeUp(0.3)} className="mt-8 flex flex-wrap gap-10">
+            {stats.map((s) => (
+              <div key={s.label} className="flex flex-col">
+                <span
+                  className="font-bold text-white"
+                  style={{ fontSize: "clamp(1.2rem, 2vw, 2.5rem)" }}
+                >
+                  {s.value}
+                </span>
+                <span className="text-xs text-zinc-500">{s.label}</span>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* CTA buttons */}
+          <motion.div {...fadeUp(0.35)} className="mt-8 flex flex-wrap gap-3">
+            <a
+              href="/projects/spine-demo"
+              className="inline-flex items-center gap-2 rounded-full bg-green-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-green-300"
+            >
+              Try spine AI demo <ArrowRight size={16} />
+            </a>
+            <a
+              href="#projects"
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-green-400 hover:text-green-400"
+            >
+              View projects
+            </a>
+            <a
+              href="/Saad_Ahmad_CV.pdf"
+              download
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-green-400 hover:text-green-400"
+            >
+              <Download size={15} /> CV
+            </a>
+            <a
+              href="https://github.com/saad415"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-green-400 hover:text-green-400"
+            >
+              <FaGithub size={16} />
+            </a>
+            <a
+              href="https://linkedin.com/in/saad-ahmad"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-green-400 hover:text-green-400"
+            >
+              <FaLinkedin size={16} />
+            </a>
+          </motion.div>
+        </div>
+
+        {/* ── RIGHT: photo scales with viewport ── */}
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mt-10 flex flex-wrap gap-4"
+          {...fadeUp(0.05)}
+          className="relative w-full"
+          style={{ height: "clamp(320px, 70vh, 780px)" }}
         >
-          <a
-            href="/projects/spine-demo"
-            className="inline-flex items-center gap-2 rounded-full bg-green-400 px-6 py-3 font-semibold text-black transition hover:bg-green-300"
-          >
-            Try spine AI demo <ArrowRight size={18} />
-          </a>
-
-          <a
-            href="#projects"
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 font-semibold text-white transition hover:border-green-400 hover:text-green-400"
-          >
-            View systems
-          </a>
-
-          <a
-            href="https://github.com/saad415"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 font-semibold text-white transition hover:border-green-400 hover:text-green-400"
-          >
-            <FaGithub size={18} />
-            GitHub
-          </a>
+          <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-green-400/15 via-transparent to-green-400/5 blur-xl" />
+          <div className="relative h-full w-full overflow-hidden rounded-3xl border border-white/10">
+            <Image
+              src="/profile.png"
+              alt="Saad Ahmad"
+              fill
+              sizes="(max-width: 1024px) 100vw, 40vw"
+              className="object-cover object-top"
+              priority
+            />
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/70 to-transparent" />
+          </div>
+          <div className="absolute -bottom-3 left-4 flex items-center gap-2 rounded-full border border-white/10 bg-black/90 px-4 py-2 backdrop-blur">
+            <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_6px_2px_rgba(74,222,128,0.5)]" />
+            <span className="text-xs font-medium text-zinc-300">Available for hire</span>
+          </div>
         </motion.div>
+
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 24 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ delay: 0.35, duration: 0.7 }}
-      >
-        <SpineShowcase />
-      </motion.div>
     </section>
   );
 }
