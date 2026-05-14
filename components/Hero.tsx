@@ -1,83 +1,88 @@
 ﻿"use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
-import { FaGithub, FaLinkedin } from "react-icons/fa";
+import { ArrowRight, Activity, Brain, Server } from "lucide-react";
+import { FaGithub } from "react-icons/fa";
+import SpineShowcase from "./SpineShowcase";
+
+const pipeline = [
+  { icon: Brain, label: "3D MRI input" },
+  { icon: Activity, label: "Landmark inference" },
+  { icon: Server, label: "FastAPI + PyTorch" },
+];
 
 export default function Hero() {
   return (
-    <section className="relative mx-auto flex min-h-screen max-w-7xl flex-col justify-center overflow-hidden px-6 pt-24">
-      
-      {/* Background Glow Effects */}
-      <div className="pointer-events-none absolute right-10 top-32 h-72 w-72 rounded-full bg-green-400/20 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-32 left-10 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl" />
+    <section className="relative mx-auto grid min-h-screen max-w-7xl items-center gap-16 overflow-hidden px-6 pt-28 lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="pointer-events-none absolute left-1/2 top-20 h-96 w-96 -translate-x-1/2 rounded-full bg-green-400/10 blur-3xl" />
 
-      {/* Small Intro */}
-      <motion.p
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="mb-4 text-sm uppercase tracking-[0.35em] text-green-400"
-      >
-        AI Engineer • Deep Learning • Full Stack AI Systems
-      </motion.p>
+      <div>
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-5 text-sm uppercase tracking-[0.35em] text-green-400"
+        >
+          AI Systems • Medical Imaging • Full Stack Inference
+        </motion.p>
 
-      {/* Main Heading */}
-      <motion.h1
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, delay: 0.1 }}
-        className="max-w-5xl text-5xl font-bold leading-tight md:text-7xl"
-      >
-        Building interactive AI systems from research models to production apps.
-      </motion.h1>
+        <motion.h1
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="text-balance text-5xl font-semibold leading-[0.95] tracking-tight md:text-7xl"
+        >
+          Building AI systems that move from research notebooks to usable products.
+        </motion.h1>
 
-      {/* Description */}
-      <motion.p
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, delay: 0.2 }}
-        className="mt-6 max-w-3xl text-lg leading-8 text-gray-400 md:text-xl"
-      >
-        I develop deep learning models, medical imaging pipelines, and
-        deployable full-stack AI applications using PyTorch, FastAPI,
-        React, Next.js, Docker, GitHub Actions, and cloud-native engineering.
-      </motion.p>
+        <motion.p
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mt-7 max-w-2xl text-lg leading-8 text-zinc-400"
+        >
+          I work across deep learning, medical image analysis, backend inference
+          APIs, and interactive web interfaces — turning trained models into
+          systems people can actually use.
+        </motion.p>
 
-      {/* Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-10 flex flex-wrap gap-4"
+        >
+          <a
+            href="/projects/spine-demo"
+            className="inline-flex items-center gap-2 rounded-full bg-green-400 px-6 py-3 font-semibold text-black transition hover:bg-green-300"
+          >
+            Try spine AI demo <ArrowRight size={18} />
+          </a>
+
+          <a
+            href="#projects"
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 font-semibold text-white transition hover:border-green-400 hover:text-green-400"
+          >
+            View systems
+          </a>
+
+          <a
+            href="https://github.com/saad415"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 font-semibold text-white transition hover:border-green-400 hover:text-green-400"
+          >
+            <FaGithub size={18} />
+            GitHub
+          </a>
+        </motion.div>
+      </div>
+
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, delay: 0.3 }}
-        className="mt-10 flex flex-wrap gap-4"
+        initial={{ opacity: 0, scale: 0.96, y: 24 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ delay: 0.35, duration: 0.7 }}
       >
-        {/* Projects Button */}
-        <a
-          href="#projects"
-          className="inline-flex items-center gap-2 rounded-full bg-green-400 px-6 py-3 font-semibold text-black transition hover:bg-green-300"
-        >
-          View Projects <ArrowRight size={18} />
-        </a>
-
-        {/* GitHub Button */}
-        <a
-          href="https://github.com/saad415"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-full border border-white/20 px-6 py-3 font-semibold text-white transition hover:border-green-400 hover:text-green-400"
-        >
-          <FaGithub size={18} />
-          GitHub
-        </a>
-
-        {/* LinkedIn / Contact Button */}
-        <a
-          href="#contact"
-          className="inline-flex items-center gap-2 rounded-full border border-white/20 px-6 py-3 font-semibold text-white transition hover:border-green-400 hover:text-green-400"
-        >
-          <FaLinkedin size={18} />
-          Contact
-        </a>
+        <SpineShowcase />
       </motion.div>
     </section>
   );

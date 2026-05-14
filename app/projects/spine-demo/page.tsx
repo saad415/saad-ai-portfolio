@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Upload, Brain, FileJson, ShieldAlert } from "lucide-react";
 import NiftiViewer from "@/components/NiftiViewer";
+import Navbar from "@/components/Navbar";
+import SpineOverview from "@/components/SpineOverview";
 
 export default function SpineDemoPage() {
   const [fileName, setFileName] = useState<string>("");
@@ -29,7 +31,8 @@ export default function SpineDemoPage() {
       );
 
       if (!response.ok) {
-        throw new Error("Inference request failed");
+        const errorText = await response.text();
+        throw new Error(errorText);
       }
 
       const data = await response.json();
@@ -51,6 +54,7 @@ export default function SpineDemoPage() {
   )}
   return (
     <main className="min-h-screen bg-black px-6 py-24 text-white">
+      <Navbar />
       <section className="mx-auto max-w-6xl">
         <p className="text-sm uppercase tracking-[0.35em] text-green-400">
           Interactive AI Demo
@@ -147,6 +151,8 @@ export default function SpineDemoPage() {
           </div>
         </div>
       </section>
+
+      <SpineOverview />
     </main>
   );
 }
