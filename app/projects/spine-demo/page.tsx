@@ -2,33 +2,17 @@
 
 import { useState } from "react";
 import { Upload, Brain, FileJson, ShieldAlert } from "lucide-react";
-
-type Landmark = {
-  label: string;
-  x: number;
-  y: number;
-  z: number;
-};
-
-const mockLandmarks: Landmark[] = [
-  { label: "S1", x: 124, y: 88, z: 41 },
-  { label: "S2", x: 126, y: 94, z: 47 },
-  { label: "S3", x: 128, y: 101, z: 53 },
-  { label: "S4", x: 129, y: 108, z: 59 },
-  { label: "S5", x: 131, y: 114, z: 64 },
-];
+import NiftiViewer from "@/components/NiftiViewer";
 
 export default function SpineDemoPage() {
   const [fileName, setFileName] = useState<string>("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isRunning, setIsRunning] = useState(false);
-  const [landmarks, setLandmarks] = useState<Landmark[]>([]);
-  const [sliceIndex, setSliceIndex] = useState(41);
 
   const runMockInference = () => {
     setIsRunning(true);
 
     setTimeout(() => {
-      setLandmarks(mockLandmarks);
       setIsRunning(false);
     }, 1200);
   };
@@ -45,9 +29,8 @@ export default function SpineDemoPage() {
         </h1>
 
         <p className="mt-6 max-w-3xl text-lg leading-8 text-gray-400">
-          Upload an anonymized pelvic MRI volume and run a deep learning model to
-          predict sacral vertebra landmarks. This demo will later connect to a
-          FastAPI + PyTorch inference backend.
+          Upload an anonymized pelvic MRI volume to display the real sagittal
+          volume view directly in the browser.
         </p>
 
         <div className="mt-10 rounded-3xl border border-yellow-500/20 bg-yellow-500/10 p-5">
@@ -82,9 +65,10 @@ export default function SpineDemoPage() {
                 className="hidden"
                 onChange={(event) => {
                   const file = event.target.files?.[0];
+
                   if (file) {
                     setFileName(file.name);
-                    setLandmarks([]);
+                    setSelectedFile(file);
                   }
                 }}
               />
@@ -99,7 +83,7 @@ export default function SpineDemoPage() {
 
             <button
               onClick={runMockInference}
-              disabled={!fileName || isRunning}
+              disabled={!selectedFile || isRunning}
               className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-green-400 px-6 py-3 font-semibold text-black transition hover:bg-green-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Brain size={18} />
@@ -110,61 +94,10 @@ export default function SpineDemoPage() {
           <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8">
             <div className="flex items-center gap-3">
               <FileJson className="text-green-400" />
-              <h2 className="text-2xl font-semibold">Prediction Output</h2>
+              <h2 className="text-2xl font-semibold">Sagittal Volume Viewer</h2>
             </div>
 
-            {landmarks.length === 0 ? (
-              <div className="mt-8 flex h-80 items-center justify-center rounded-2xl border border-white/10 bg-black/40 px-6 text-center text-gray-500">
-                Upload a volume and run inference to view predicted landmarks.
-              </div>
-            ) : (
-              <>
-                <div className="mt-8 rounded-2xl border border-white/10 bg-black/40 p-4">
-                  <div className="relative mx-auto h-80 max-w-md overflow-hidden rounded-xl bg-gradient-to-br from-gray-800 via-gray-900 to-black">
-                    <div className="absolute inset-8 rounded-full border border-gray-600/60" />
-                    <div className="absolute left-1/2 top-8 h-64 w-24 -translate-x-1/2 rounded-full border border-gray-500/50" />
-
-                    {landmarks
-                      .filter((point) => Math.abs(point.z - sliceIndex) <= 2)
-                      .map((point) => (
-                        <div
-                          key={point.label}
-                          className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-1"
-                          style={{
-                            left: `${(point.x / 180) * 100}%`,
-                            top: `${(point.y / 160) * 100}%`,
-                          }}
-                        >
-                          <span className="h-3 w-3 rounded-full bg-green-400 shadow-[0_0_15px_rgba(74,222,128,0.9)]" />
-                          <span className="text-xs font-bold text-green-400">
-                            {point.label}
-                          </span>
-                        </div>
-                      ))}
-                  </div>
-
-                  <div className="mt-5">
-                    <div className="mb-2 flex justify-between text-sm text-gray-400">
-                      <span>Slice viewer</span>
-                      <span>Z = {sliceIndex}</span>
-                    </div>
-
-                    <input
-                      type="range"
-                      min="35"
-                      max="70"
-                      value={sliceIndex}
-                      onChange={(event) =>
-                        setSliceIndex(Number(event.target.value))
-                      }
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-
-                
-              </>
-            )}
+            <NiftiViewer file={selectedFile} />
           </div>
         </div>
       </section>
