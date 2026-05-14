@@ -3,10 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import * as nifti from "nifti-reader-js";
 
-type NiftiViewerProps = {
-  file: File | null;
+type Landmark = {
+  label: string;
+  voxel: [number, number, number];
+  confidence: number;
+  type: string;
 };
 
+type NiftiViewerProps = {
+  file: File | null;
+  landmarks?: Landmark[];
+};
 type ViewMode = "axial" | "coronal" | "sagittal";
 
 type VolumeInfo = {
@@ -14,8 +21,7 @@ type VolumeInfo = {
   dims: [number, number, number];
 };
 
-export default function NiftiViewer({ file }: NiftiViewerProps) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+export default function NiftiViewer({ file, landmarks = [] }: NiftiViewerProps) {  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [volumeInfo, setVolumeInfo] = useState<VolumeInfo | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("sagittal");
@@ -186,7 +192,50 @@ export default function NiftiViewer({ file }: NiftiViewerProps) {
     });
 
     ctx.putImageData(imageData, 0, 0);
-  }, [volumeInfo, viewMode, sliceIndex]);
+    ctx.fillStyle = "#00ff88";
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2;
+    ctx.font = "14px sans-serif";
+
+    landmarks.forEach((landmark) => {
+      const [x, y, z] = landmark.voxel;
+
+      let drawX = 0;
+      let drawY = 0;
+      let shouldRender = false;
+
+      if (viewMode === "sagittal" && Math.abs(z - safeSlice) <= 2) {
+        drawX = x;
+        drawY = height - y;
+        shouldRender = true;
+      }
+
+      if (viewMode === "coronal" && Math.abs(x - safeSlice) <= 2) {
+        drawX = z;
+        drawY = height - y;
+        shouldRender = true;
+      }
+
+      if (viewMode === "axial" && Math.abs(y - safeSlice) <= 2) {
+        drawX = x;
+        drawY = height - z;
+        shouldRender = true;
+      }
+
+      if (!shouldRender) return;
+
+      ctx.beginPath();
+      ctx.arc(drawX, drawY, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillText(
+        landmark.label,
+        drawX + 10,
+        drawY - 10
+      );
+    });
+  }, [volumeInfo, viewMode, sliceIndex, landmarks]);
 
   const changeViewMode = (mode: ViewMode) => {
     if (!volumeInfo) return;

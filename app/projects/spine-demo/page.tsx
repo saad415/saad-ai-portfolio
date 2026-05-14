@@ -9,14 +9,46 @@ export default function SpineDemoPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
-  const runMockInference = () => {
-    setIsRunning(true);
+  const [predictionResult, setPredictionResult] = useState<any>(null);
 
-    setTimeout(() => {
+  const runInference = async () => {
+    if (!selectedFile) return;
+
+    try {
+      setIsRunning(true);
+
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/predict-landmarks",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Inference request failed");
+      }
+
+      const data = await response.json();
+
+      console.log("Inference result:", data);
+
+      setPredictionResult(data);
+
+    } catch (error) {
+      console.error(error);
+    } finally {
       setIsRunning(false);
-    }, 1200);
+    }
   };
-
+  {predictionResult && (
+    <pre className="mt-4 overflow-auto rounded-xl bg-black/40 p-4 text-xs text-green-400">
+      {JSON.stringify(predictionResult, null, 2)}
+    </pre>
+  )}
   return (
     <main className="min-h-screen bg-black px-6 py-24 text-white">
       <section className="mx-auto max-w-6xl">
@@ -82,13 +114,24 @@ export default function SpineDemoPage() {
             )}
 
             <button
-              onClick={runMockInference}
+              onClick={runInference}
               disabled={!selectedFile || isRunning}
               className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-green-400 px-6 py-3 font-semibold text-black transition hover:bg-green-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Brain size={18} />
               {isRunning ? "Running model..." : "Run Inference"}
             </button>
+            {predictionResult && (
+            <div className="mt-6 rounded-2xl border border-green-400/20 bg-black/50 p-4">
+              <h3 className="mb-3 font-semibold text-green-400">
+                Backend Response
+              </h3>
+
+              <pre className="overflow-auto text-xs text-gray-300">
+                {JSON.stringify(predictionResult, null, 2)}
+              </pre>
+            </div>
+          )}
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8">
@@ -96,8 +139,11 @@ export default function SpineDemoPage() {
               <FileJson className="text-green-400" />
               <h2 className="text-2xl font-semibold">Sagittal Volume Viewer</h2>
             </div>
-
-            <NiftiViewer file={selectedFile} />
+            <NiftiViewer
+              file={selectedFile}
+              landmarks={predictionResult?.landmarks || []}
+            />
+            
           </div>
         </div>
       </section>
