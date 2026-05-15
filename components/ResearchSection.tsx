@@ -102,9 +102,7 @@ export default function ResearchSection() {
           </h3>
           <div className="mt-5 flex flex-wrap gap-3">
             <a
-              href="/thesis-spine.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/thesis/spine"
               className="inline-flex items-center gap-2 rounded-full bg-green-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-green-300"
             >
               <BookOpen size={15} /> Read thesis
@@ -177,9 +175,7 @@ export default function ResearchSection() {
           </h3>
           <div className="mt-5 flex flex-wrap gap-3">
             <a
-              href="/thesis-uterus.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/thesis/uterus"
               className="inline-flex items-center gap-2 rounded-full bg-green-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-green-300"
             >
               <BookOpen size={15} /> Read thesis
