@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowUpRight, BookOpen, Target, FlaskConical, BarChart3 } from "lucide-react";
 import SpineShowcase from "./SpineShowcase";
+import UterusShowcase from "./UterusShowcase";
 
 /* ── shared sub-components ── */
 
@@ -51,47 +52,6 @@ const StackChips = ({ stack }: { stack: string[] }) => (
     {stack.map((t) => (
       <span key={t} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-400">{t}</span>
     ))}
-  </div>
-);
-
-/* ── Uterus bar chart visual ── */
-const UterusChart = () => (
-  <div className="rounded-[2rem] border border-white/10 bg-white/[0.035] p-6 shadow-2xl shadow-green-950/20">
-    <p className="mb-5 text-xs uppercase tracking-widest text-zinc-500">Per-landmark mean error</p>
-    <div className="flex flex-col gap-4">
-      {[
-        { name: "Cavity Cervix",  mean: "2.90 mm", pct: 43 },
-        { name: "Cavity Fundus",  mean: "2.94 mm", pct: 44 },
-        { name: "Inner OS",       mean: "4.85 mm", pct: 72 },
-        { name: "Fundus Outer",   mean: "5.11 mm", pct: 76 },
-        { name: "APD (mean L+R)", mean: "5.66 mm", pct: 85 },
-      ].map((row, i) => (
-        <div key={row.name} className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
-            <span style={{ fontSize: "clamp(0.85rem, 1vw, 1rem)" }} className="text-zinc-300">{row.name}</span>
-            <span style={{ fontSize: "clamp(0.85rem, 1vw, 1rem)" }} className="font-semibold text-green-400">{row.mean}</span>
-          </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-white/8">
-            <motion.div
-              className="h-full rounded-full bg-green-400/70"
-              initial={{ width: 0 }}
-              whileInView={{ width: `${row.pct}%` }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1, duration: 0.6, ease: "easeOut" }}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-    <p className="mt-5 text-xs text-zinc-600">Lower = better · scale max ≈ 6.7 mm</p>
-
-    <div className="mt-6 rounded-2xl border border-green-400/15 bg-green-400/5 p-4">
-      <p style={{ fontSize: "clamp(0.8rem, 0.9vw, 0.95rem)" }} className="leading-6 text-zinc-400">
-        First automated 3D approach for uterine multi-landmark localization.
-        Cavity Cervix &amp; Fundus achieve <span className="text-green-400 font-medium">sub-3 mm precision</span> — enabling
-        reproducible biometry at scale.
-      </p>
-    </div>
   </div>
 );
 
@@ -258,7 +218,10 @@ export default function ResearchSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.15 }}
           >
-            <UterusChart />
+            <p style={{ fontSize: "clamp(0.7rem, 0.8vw, 0.85rem)" }} className="mb-4 uppercase tracking-widest text-zinc-600">
+              Model output · real predictions
+            </p>
+            <UterusShowcase />
           </motion.div>
         </div>
       </motion.div>
