@@ -41,3 +41,5 @@ backend/outputs/*
 *.onnx
 *.nii
 *.nii.gz
+
+.claude/
