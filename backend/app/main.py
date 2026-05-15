@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.inference_routes import router as inference_router
+from app.api.uterus_routes import router as uterus_router
 
-app = FastAPI(title="Spine Landmark AI Backend")
+app = FastAPI(title="Medical Landmark AI Backend")
 
 app.add_middleware(
     CORSMiddleware,
@@ -13,6 +14,7 @@ app.add_middleware(
 )
 
 app.include_router(inference_router, prefix="/api")
+app.include_router(uterus_router, prefix="/api/uterus")
 
 @app.get("/health")
 def health():
