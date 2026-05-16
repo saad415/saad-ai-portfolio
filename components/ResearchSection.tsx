@@ -105,7 +105,7 @@ export default function ResearchSection() {
               href="/thesis/spine"
               className="inline-flex items-center gap-2 rounded-full bg-green-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-green-300"
             >
-              <BookOpen size={15} /> Read thesis
+              <BookOpen size={15} /> Imeplentation Details
             </a>
             <a
               href="/projects/spine-demo"
@@ -178,7 +178,7 @@ export default function ResearchSection() {
               href="/thesis/uterus"
               className="inline-flex items-center gap-2 rounded-full bg-green-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-green-300"
             >
-              <BookOpen size={15} /> Read thesis
+              <BookOpen size={15} /> Imeplentation Details
             </a>
             <a
               href="/projects/uterus-demo"

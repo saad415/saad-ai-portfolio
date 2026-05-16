@@ -35,6 +35,16 @@ const projects: Project[] = [
     href: "/",
   },
   {
+    title: "Spotify Analytics Pipeline",
+    category: "Data Engineering",
+    categoryTag: "Data Engineering",
+    description:
+      "End-to-end cloud pipeline that pulls Spotify listening data on a daily schedule, stores it in S3, and surfaces track popularity, audio features, and artist trends in interactive Power BI dashboards.",
+    pipeline: ["Spotify API", "Airflow DAG", "AWS EC2", "AWS S3", "Power BI"],
+    tech: ["Python", "Apache Airflow", "AWS EC2", "AWS S3", "Power BI"],
+    href: "/projects/spotify",
+  },
+  {
     title: "Vertebral Labelling Study",
     category: "Research",
     categoryTag: "Research",

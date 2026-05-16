@@ -7,13 +7,14 @@ import ProjectCard from "./ProjectCard";
 export type Project = {
   title: string;
   category: string;
-  categoryTag: "AI/ML" | "Full Stack" | "Research";
+  categoryTag: "AI/ML" | "Full Stack" | "Research" | "Data Engineering";
   description: string;
   tech: string[];
   href: string;
+  pipeline?: string[];
 };
 
-const FILTERS = ["All", "AI/ML", "Full Stack", "Research"] as const;
+const FILTERS = ["All", "AI/ML", "Full Stack", "Data Engineering", "Research"] as const;
 type Filter = (typeof FILTERS)[number];
 
 export default function ProjectsSection({ projects }: { projects: Project[] }) {
