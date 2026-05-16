@@ -37,9 +37,15 @@ def get_inference_engine():
     return inference_engine
 
 
-def predict_spine_landmarks(nifti_path: str) -> dict:
+def predict_spine_landmarks(nifti_path: str, progress_callback=None) -> dict:
+    def report(progress: int, stage: str):
+        if progress_callback:
+            progress_callback(progress, stage)
+
+    report(3, "Loading spine model")
     engine = get_inference_engine()
 
+    report(10, "Reading MRI volume")
     volume_nii = nib.load(nifti_path)
     original_volume = volume_nii.get_fdata().astype(np.float32)
     original_affine = volume_nii.affine.copy()
@@ -47,12 +53,14 @@ def predict_spine_landmarks(nifti_path: str) -> dict:
     inference_volume = original_volume.copy()
     inference_affine = original_affine.copy()
 
+    report(18, "Checking preprocessing requirements")
     preprocessing_applied = detect_if_preprocessing_needed(
         inference_volume,
         silent=True,
     )
 
     if preprocessing_applied:
+        report(24, "Preprocessing volume")
         inference_volume, inference_affine = preprocess_volume_for_inference(
             inference_volume,
             original_affine,
@@ -61,12 +69,20 @@ def predict_spine_landmarks(nifti_path: str) -> dict:
             silent=True,
         )
 
+    report(32, "Running 3D U-Net inference")
+
+    def report_model_progress(model_progress: float):
+        scaled_progress = 32 + int(model_progress * 50)
+        report(min(scaled_progress, 82), "Running 3D U-Net inference")
+
     vertebrae_heatmap, s1_heatmap = engine.infer_volume(
         inference_volume,
         batch_size=8,
+        progress_callback=report_model_progress,
     )
 
     if not np.array_equal(inference_volume.shape, original_volume.shape):
+        report(86, "Resampling heatmaps")
         zoom_factors = np.array(original_volume.shape) / np.array(
             inference_volume.shape
         )
@@ -85,6 +101,7 @@ def predict_spine_landmarks(nifti_path: str) -> dict:
             prefilter=False,
         )
 
+    report(90, "Detecting vertebral landmarks")
     labeled_vertebrae, s1_present, s1_location, detection_summary = (
         enhanced_s1_anchored_vertebrae_detection(
             vertebrae_heatmap,
@@ -116,6 +133,8 @@ def predict_spine_landmarks(nifti_path: str) -> dict:
                 "region": item.get("region", "unknown"),
             }
         )
+
+    report(100, "Inference complete")
 
     return {
         "status": "completed",

@@ -180,13 +180,14 @@ class MultiTaskFullVolumeInference:
         
         return patches, patch_positions
     
-    def predict_patches(self, patches, batch_size=8):
+    def predict_patches(self, patches, batch_size=8, progress_callback=None):
         """Run inference on patches in batches."""
         vertebrae_predictions = []
         s1_predictions = []
+        total_batches = max(1, (len(patches) + batch_size - 1) // batch_size)
         
         with torch.no_grad():
-            for i in range(0, len(patches), batch_size):
+            for batch_index, i in enumerate(range(0, len(patches), batch_size)):
                 batch_patches = patches[i:i+batch_size]
                 
                 batch_tensor = torch.stack([
@@ -203,6 +204,9 @@ class MultiTaskFullVolumeInference:
                     
                     vertebrae_predictions.append(vertebrae_pred)
                     s1_predictions.append(s1_pred)
+
+                if progress_callback:
+                    progress_callback((batch_index + 1) / total_batches)
         
         return vertebrae_predictions, s1_predictions
     
@@ -241,10 +245,17 @@ class MultiTaskFullVolumeInference:
         
         return weight_3d.astype(np.float32)
     
-    def infer_volume(self, volume, batch_size=8):
+    def infer_volume(self, volume, batch_size=8, progress_callback=None):
         """Perform full inference on a volume."""
         patches, positions = self.extract_patches(volume)
-        vertebrae_predictions, s1_predictions = self.predict_patches(patches, batch_size)
+        if progress_callback:
+            progress_callback(0.0)
+
+        vertebrae_predictions, s1_predictions = self.predict_patches(
+            patches,
+            batch_size,
+            progress_callback=progress_callback,
+        )
         
         combined_vertebrae = self.combine_patches(vertebrae_predictions, positions, volume.shape)
         combined_s1 = self.combine_patches(s1_predictions, positions, volume.shape)

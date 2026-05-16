@@ -1,29 +1,51 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Brain, FileJson, ShieldAlert } from "lucide-react";
+import { Upload, Brain, FileJson, ShieldAlert, Loader2 } from "lucide-react";
 import NiftiViewer from "@/components/NiftiViewer";
 import Navbar from "@/components/Navbar";
 import SpineOverview from "@/components/SpineOverview";
+
+type Landmark = {
+  label: string;
+  voxel: [number, number, number];
+  confidence: number;
+  type: string;
+  region?: string;
+};
+
+type PredictionResult = {
+  status: string;
+  filename: string;
+  s1Detected: boolean;
+  landmarks: Landmark[];
+};
 
 export default function SpineDemoPage() {
   const [fileName, setFileName] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isRunning, setIsRunning] = useState(false);
-
-  const [predictionResult, setPredictionResult] = useState<any>(null);
+  const [progress, setProgress] = useState(0);
+  const [progressStage, setProgressStage] = useState("");
+  const [inferenceError, setInferenceError] = useState("");
+  const [predictionResult, setPredictionResult] =
+    useState<PredictionResult | null>(null);
 
   const runInference = async () => {
     if (!selectedFile) return;
 
     try {
       setIsRunning(true);
+      setProgress(0);
+      setProgressStage("Uploading MRI volume");
+      setInferenceError("");
+      setPredictionResult(null);
 
       const formData = new FormData();
       formData.append("file", selectedFile);
 
       const response = await fetch(
-        "http://127.0.0.1:8000/api/predict-landmarks",
+        "http://127.0.0.1:8000/api/predict-landmarks/start",
         {
           method: "POST",
           body: formData,
@@ -36,22 +58,48 @@ export default function SpineDemoPage() {
       }
 
       const data = await response.json();
+      const jobId = data.jobId;
 
-      console.log("Inference result:", data);
+      if (!jobId) {
+        throw new Error("Backend did not return an inference job ID.");
+      }
 
-      setPredictionResult(data);
+      while (true) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
+        const progressResponse = await fetch(
+          `http://127.0.0.1:8000/api/predict-landmarks/progress/${jobId}`
+        );
+
+        if (!progressResponse.ok) {
+          const errorText = await progressResponse.text();
+          throw new Error(errorText);
+        }
+
+        const progressData = await progressResponse.json();
+
+        setProgress(progressData.progress ?? 0);
+        setProgressStage(progressData.stage ?? "Running inference");
+
+        if (progressData.status === "completed") {
+          setPredictionResult(progressData.result);
+          break;
+        }
+
+        if (progressData.status === "failed") {
+          throw new Error(progressData.error || "Inference failed.");
+        }
+      }
     } catch (error) {
       console.error(error);
+      setInferenceError(
+        error instanceof Error ? error.message : "Inference failed."
+      );
     } finally {
       setIsRunning(false);
     }
   };
-  {predictionResult && (
-    <pre className="mt-4 overflow-auto rounded-xl bg-black/40 p-4 text-xs text-green-400">
-      {JSON.stringify(predictionResult, null, 2)}
-    </pre>
-  )}
+
   return (
     <main className="min-h-screen bg-black px-6 py-24 text-white">
       <Navbar />
@@ -105,6 +153,10 @@ export default function SpineDemoPage() {
                   if (file) {
                     setFileName(file.name);
                     setSelectedFile(file);
+                    setPredictionResult(null);
+                    setInferenceError("");
+                    setProgress(0);
+                    setProgressStage("");
                   }
                 }}
               />
@@ -122,9 +174,45 @@ export default function SpineDemoPage() {
               disabled={!selectedFile || isRunning}
               className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-green-400 px-6 py-3 font-semibold text-black transition hover:bg-green-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <Brain size={18} />
+              {isRunning ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Brain size={18} />
+              )}
               {isRunning ? "Running model..." : "Run Inference"}
             </button>
+
+            {isRunning && (
+              <div className="mt-6 rounded-2xl border border-green-400/20 bg-black/50 p-4">
+                <div className="mb-3 flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-semibold text-green-400">
+                      Inference Progress
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-400">
+                      {progressStage || "Running inference"}
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold text-green-400">
+                    {progress}%
+                  </span>
+                </div>
+
+                <div className="h-3 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-green-400 transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {inferenceError && (
+              <div className="mt-6 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-200">
+                {inferenceError}
+              </div>
+            )}
+
             {predictionResult && (
             <div className="mt-6 rounded-2xl border border-green-400/20 bg-black/50 p-4">
               <h3 className="mb-3 font-semibold text-green-400">
