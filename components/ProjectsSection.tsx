@@ -27,9 +27,9 @@ export default function ProjectsSection({ projects }: { projects: Project[] }) {
     <section id="projects" className="relative w-full px-[5vw] py-28">
       {/* Header */}
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
+        initial={{ y: 24 }}
+        whileInView={{ y: 0 }}
+        viewport={{ once: true, amount: 0.1 }}
         transition={{ duration: 0.6 }}
         className="mb-12"
       >
@@ -72,17 +72,17 @@ export default function ProjectsSection({ projects }: { projects: Project[] }) {
       <AnimatePresence mode="wait">
         <motion.div
           key={active}
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
+          initial={{ y: 16 }}
+          animate={{ y: 0 }}
+          exit={{ y: -8 }}
           transition={{ duration: 0.3 }}
           className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch"
         >
           {filtered.map((project, i) => (
             <motion.div
               key={project.title}
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ y: 24 }}
+              animate={{ y: 0 }}
               transition={{ delay: i * 0.07, duration: 0.4 }}
               className="h-full"
             >

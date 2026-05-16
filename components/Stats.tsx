@@ -31,7 +31,7 @@ export default function Stats() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
-            viewport={{ once: true }}
+            viewport={{ once: false, amount: 0 }}
             className="rounded-3xl border border-white/10 bg-white/[0.03] p-8 backdrop-blur-xl"
           >
             <h3 className="text-4xl font-bold text-green-400">

@@ -15,9 +15,9 @@ const MetricCard = ({
   value, label, sub, delay,
 }: { value: string; label: string; sub: string; delay: number }) => (
   <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true }}
+    initial={{ y: 20 }}
+    whileInView={{ y: 0 }}
+    viewport={{ once: true, amount: 0.1 }}
     transition={{ delay }}
     className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
   >
@@ -31,9 +31,9 @@ const NarrativeItem = ({
   icon: Icon, title, body, delay,
 }: { icon: React.ElementType; title: string; body: string; delay: number }) => (
   <motion.div
-    initial={{ opacity: 0, x: -16 }}
-    whileInView={{ opacity: 1, x: 0 }}
-    viewport={{ once: true }}
+    initial={{ x: -16 }}
+    whileInView={{ x: 0 }}
+    viewport={{ once: true, amount: 0.1 }}
     transition={{ delay, duration: 0.5 }}
     className="flex gap-5"
   >
@@ -65,9 +65,9 @@ export default function ResearchSection() {
 
       {/* ── Section heading ── */}
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
+        initial={{ y: 24 }}
+        whileInView={{ y: 0 }}
+        viewport={{ once: true, amount: 0.1 }}
         transition={{ duration: 0.6 }}
         className="mb-20"
       >
@@ -87,9 +87,9 @@ export default function ResearchSection() {
           THESIS I — Spine / Sacral MRI
       ══════════════════════════════════════════ */}
       <motion.div
-        initial={{ opacity: 0, y: 32 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
+        initial={{ y: 32 }}
+        whileInView={{ y: 0 }}
+        viewport={{ once: true, amount: 0.05 }}
         transition={{ duration: 0.6 }}
       >
         <div className="mb-10">
@@ -136,9 +136,9 @@ export default function ResearchSection() {
           </div>
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
+            initial={{ scale: 0.96 }}
+            whileInView={{ scale: 1 }}
+            viewport={{ once: true, amount: 0.1 }}
             transition={{ duration: 0.6, delay: 0.15 }}
           >
             <p style={{ fontSize: "clamp(0.7rem, 0.8vw, 0.85rem)" }} className="mb-4 uppercase tracking-widest text-zinc-600">
@@ -160,9 +160,9 @@ export default function ResearchSection() {
           THESIS II — Uterus / Pelvic MRI
       ══════════════════════════════════════════ */}
       <motion.div
-        initial={{ opacity: 0, y: 32 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
+        initial={{ y: 32 }}
+        whileInView={{ y: 0 }}
+        viewport={{ once: true, amount: 0.05 }}
         transition={{ duration: 0.6 }}
       >
         <div className="mb-10">
@@ -209,9 +209,9 @@ export default function ResearchSection() {
           </div>
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
+            initial={{ scale: 0.96 }}
+            whileInView={{ scale: 1 }}
+            viewport={{ once: true, amount: 0.1 }}
             transition={{ duration: 0.6, delay: 0.15 }}
           >
             <p style={{ fontSize: "clamp(0.7rem, 0.8vw, 0.85rem)" }} className="mb-4 uppercase tracking-widest text-zinc-600">

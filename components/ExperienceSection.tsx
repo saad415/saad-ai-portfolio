@@ -56,9 +56,9 @@ export default function ExperienceSection() {
 
       {/* Header */}
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
+        initial={{ y: 24 }}
+        whileInView={{ y: 0 }}
+        viewport={{ once: true, amount: 0.1 }}
         transition={{ duration: 0.6 }}
         className="mb-14 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"
       >
@@ -89,9 +89,9 @@ export default function ExperienceSection() {
           {experiences.map((exp, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, x: -24 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              initial={{ x: -24 }}
+              whileInView={{ x: 0 }}
+              viewport={{ once: true, amount: 0.1 }}
               transition={{ delay: i * 0.12, duration: 0.55 }}
               className="relative flex gap-6 sm:gap-8"
             >

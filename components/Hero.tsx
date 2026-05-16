@@ -1,6 +1,5 @@
-﻿"use client";
+"use client";
 
-import { motion } from "framer-motion";
 import { ArrowRight, MapPin, Download } from "lucide-react";
 import { FaGithub, FaLinkedin } from "react-icons/fa";
 import Image from "next/image";
@@ -12,12 +11,6 @@ const stats = [
   { value: "96%",  label: "Model Accuracy" },
   { value: "Live", label: "Inference API" },
 ];
-
-const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 24 },
-  animate: { opacity: 1, y: 0 },
-  transition: { delay, duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
-} as const);
 
 export default function Hero() {
   return (
@@ -31,7 +24,7 @@ export default function Hero() {
 
         {/* ── LEFT: text ── */}
         <div>
-          <motion.div {...fadeUp(0.1)} className="flex flex-wrap items-center gap-3">
+          <div className="anim-fade-up anim-delay-1 flex flex-wrap items-center gap-3">
             <span className="rounded-full bg-green-400/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.3em] text-green-400">
               Available for opportunities
             </span>
@@ -39,17 +32,16 @@ export default function Hero() {
               <MapPin size={11} />
               Remote / Worldwide
             </span>
-          </motion.div>
+          </div>
 
-          <motion.h1
-            {...fadeUp(0.15)}
-            className="mt-4 font-semibold leading-[1.05] tracking-tight text-white"
+          <h1
+            className="anim-fade-up anim-delay-2 mt-4 font-semibold leading-[1.05] tracking-tight text-white"
             style={{ fontSize: "clamp(1.8rem, 4vw, 6rem)" }}
           >
             Saad Ahmad
-          </motion.h1>
+          </h1>
 
-          <motion.div {...fadeUp(0.2)} className="mt-3 flex items-center gap-3">
+          <div className="anim-fade-up anim-delay-3 mt-3 flex items-center gap-3">
             <span className="h-px w-8 bg-green-400/50" />
             <span
               className="font-medium text-green-400"
@@ -57,20 +49,19 @@ export default function Hero() {
             >
               {roles[0]} &nbsp;·&nbsp; {roles[1]}
             </span>
-          </motion.div>
+          </div>
 
-          <motion.p
-            {...fadeUp(0.25)}
-            className="mt-5 leading-7 text-zinc-400"
+          <p
+            className="anim-fade-up anim-delay-4 mt-5 leading-7 text-zinc-400"
             style={{ fontSize: "clamp(0.95rem, 1.2vw, 1.25rem)", maxWidth: "55ch" }}
           >
             I build AI systems that move from research notebooks to usable products —
             spanning deep learning, medical image analysis, backend inference APIs,
             and interactive web interfaces.
-          </motion.p>
+          </p>
 
           {/* Quick stats */}
-          <motion.div {...fadeUp(0.3)} className="mt-8 flex flex-wrap gap-10">
+          <div className="anim-fade-up anim-delay-5 mt-8 flex flex-wrap gap-10">
             {stats.map((s) => (
               <div key={s.label} className="flex flex-col">
                 <span
@@ -82,10 +73,10 @@ export default function Hero() {
                 <span className="text-xs text-zinc-500">{s.label}</span>
               </div>
             ))}
-          </motion.div>
+          </div>
 
           {/* CTA buttons */}
-          <motion.div {...fadeUp(0.35)} className="mt-8 flex flex-wrap gap-3">
+          <div className="anim-fade-up anim-delay-6 mt-8 flex flex-wrap gap-3">
             <a
               href="/projects/spine-demo"
               className="inline-flex items-center gap-2 rounded-full bg-green-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-green-300"
@@ -121,13 +112,12 @@ export default function Hero() {
             >
               <FaLinkedin size={16} />
             </a>
-          </motion.div>
+          </div>
         </div>
 
         {/* ── RIGHT: photo scales with viewport ── */}
-        <motion.div
-          {...fadeUp(0.05)}
-          className="relative w-full"
+        <div
+          className="anim-fade-up anim-delay-1 relative w-full"
           style={{ height: "clamp(320px, 70vh, 780px)" }}
         >
           <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-green-400/15 via-transparent to-green-400/5 blur-xl" />
@@ -146,7 +136,7 @@ export default function Hero() {
             <span className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_6px_2px_rgba(74,222,128,0.5)]" />
             <span className="text-xs font-medium text-zinc-300">Available for hire</span>
           </div>
-        </motion.div>
+        </div>
 
       </div>
 
