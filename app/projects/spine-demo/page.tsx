@@ -6,6 +6,27 @@ import NiftiViewer from "@/components/NiftiViewer";
 import Navbar from "@/components/Navbar";
 import SpineOverview from "@/components/SpineOverview";
 
+const SAMPLE_CASES = [
+  {
+    id: "case_f",
+    label: "Case A",
+    description: "Mixed visibility",
+    url: "https://nuzqakkecqaxikynctbq.supabase.co/storage/v1/object/public/porfolio/case-f-volume.nii.gz",
+  },
+  {
+    id: "case_g",
+    label: "Case B",
+    description: "Sacral-only coverage",
+    url: "https://nuzqakkecqaxikynctbq.supabase.co/storage/v1/object/public/porfolio/case-g-volume.nii.gz",
+  },
+  {
+    id: "case_h",
+    label: "Case C",
+    description: "Full spine visibility",
+    url: "https://nuzqakkecqaxikynctbq.supabase.co/storage/v1/object/public/porfolio/case-h-volume.nii.gz",
+  },
+] as const;
+
 type Landmark = {
   label: string;
   voxel: [number, number, number];
@@ -24,12 +45,56 @@ type PredictionResult = {
 export default function SpineDemoPage() {
   const [fileName, setFileName] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedSampleId, setSelectedSampleId] = useState<string | null>(null);
+  const [loadingSampleId, setLoadingSampleId] = useState<string | null>(null);
+  const [sampleError, setSampleError] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressStage, setProgressStage] = useState("");
   const [inferenceError, setInferenceError] = useState("");
   const [predictionResult, setPredictionResult] =
     useState<PredictionResult | null>(null);
+
+  const resetInferenceState = () => {
+    setPredictionResult(null);
+    setInferenceError("");
+    setProgress(0);
+    setProgressStage("");
+  };
+
+  const loadSampleCase = async (sample: (typeof SAMPLE_CASES)[number]) => {
+    if (isRunning) return;
+
+    setSelectedSampleId(sample.id);
+    setLoadingSampleId(sample.id);
+    setSampleError("");
+    resetInferenceState();
+
+    try {
+      const response = await fetch(sample.url);
+
+      if (!response.ok) {
+        throw new Error(`Sample fetch failed: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const sampleFile = new File([blob], `${sample.id}.nii.gz`, {
+        type: "application/gzip",
+      });
+
+      setSelectedFile(sampleFile);
+      setFileName(sample.label);
+    } catch (error) {
+      setSelectedFile(null);
+      setFileName("");
+      setSelectedSampleId(null);
+      setSampleError(
+        error instanceof Error ? error.message : "Could not load sample case."
+      );
+    } finally {
+      setLoadingSampleId(null);
+    }
+  };
 
   const runInference = async () => {
     if (!selectedFile) return;
@@ -127,12 +192,69 @@ export default function SpineDemoPage() {
           </div>
         </div>
 
+        <div className="mt-10">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-gray-500">
+            Choose an example case
+          </p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {SAMPLE_CASES.map((sample) => {
+              const isActive = selectedSampleId === sample.id;
+              const isLoading = loadingSampleId === sample.id;
+
+              return (
+                <button
+                  key={sample.id}
+                  onClick={() => loadSampleCase(sample)}
+                  disabled={isRunning || Boolean(loadingSampleId)}
+                  className={`group relative rounded-2xl border p-6 text-left transition ${
+                    isActive
+                      ? "border-green-400 bg-green-400/10"
+                      : "border-white/10 bg-white/[0.02] hover:border-green-400/50"
+                  } disabled:cursor-not-allowed disabled:opacity-50`}
+                >
+                  <p className="text-lg font-bold text-white">
+                    {sample.label}
+                  </p>
+                  <p className="mt-1 text-sm text-gray-400">
+                    {sample.description}
+                  </p>
+                  {isLoading && (
+                    <Loader2
+                      className="absolute right-4 top-4 animate-spin text-green-400"
+                      size={18}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {loadingSampleId && (
+          <div className="mt-6 flex items-center gap-3 rounded-2xl border border-green-400/20 bg-green-400/5 px-5 py-4">
+            <Loader2 className="animate-spin text-green-400" size={18} />
+            <span className="text-sm text-green-300">
+              Fetching sample MRI volume...
+            </span>
+          </div>
+        )}
+
+        {sampleError && (
+          <div className="mt-6 rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4 text-sm text-red-300">
+            {sampleError}
+          </div>
+        )}
+
         <div className="mt-10 grid gap-8 lg:grid-cols-2">
           <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8">
             <div className="flex items-center gap-3">
               <Upload className="text-green-400" />
               <h2 className="text-2xl font-semibold">Upload MRI Volume</h2>
             </div>
+
+            <p className="mt-3 text-sm text-gray-500">
+              Select a sample above, or upload your own anonymized NIfTI file.
+            </p>
 
             <label className="mt-8 flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/20 bg-black/40 p-10 text-center transition hover:border-green-400">
               <Upload className="mb-4 text-gray-400" size={40} />
@@ -153,10 +275,9 @@ export default function SpineDemoPage() {
                   if (file) {
                     setFileName(file.name);
                     setSelectedFile(file);
-                    setPredictionResult(null);
-                    setInferenceError("");
-                    setProgress(0);
-                    setProgressStage("");
+                    setSelectedSampleId(null);
+                    setSampleError("");
+                    resetInferenceState();
                   }
                 }}
               />
@@ -214,16 +335,16 @@ export default function SpineDemoPage() {
             )}
 
             {predictionResult && (
-            <div className="mt-6 rounded-2xl border border-green-400/20 bg-black/50 p-4">
-              <h3 className="mb-3 font-semibold text-green-400">
-                Backend Response
-              </h3>
+              <div className="mt-6 rounded-2xl border border-green-400/20 bg-black/50 p-4">
+                <h3 className="mb-3 font-semibold text-green-400">
+                  Backend Response
+                </h3>
 
-              <pre className="overflow-auto text-xs text-gray-300">
-                {JSON.stringify(predictionResult, null, 2)}
-              </pre>
-            </div>
-          )}
+                <pre className="overflow-auto text-xs text-gray-300">
+                  {JSON.stringify(predictionResult, null, 2)}
+                </pre>
+              </div>
+            )}
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8">
@@ -235,7 +356,6 @@ export default function SpineDemoPage() {
               file={selectedFile}
               landmarks={predictionResult?.landmarks || []}
             />
-            
           </div>
         </div>
       </section>

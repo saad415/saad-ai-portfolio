@@ -21,11 +21,16 @@ type VolumeInfo = {
   dims: [number, number, number];
 };
 
-export default function NiftiViewer({ file, landmarks = [] }: NiftiViewerProps) {  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+export default function NiftiViewer({ file, landmarks = [] }: NiftiViewerProps) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [volumeInfo, setVolumeInfo] = useState<VolumeInfo | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("sagittal");
   const [sliceIndex, setSliceIndex] = useState(0);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const dragOrigin = useRef({ mx: 0, my: 0, px: 0, py: 0 });
 
   useEffect(() => {
     if (!file) return;
@@ -94,6 +99,8 @@ export default function NiftiViewer({ file, landmarks = [] }: NiftiViewerProps) 
 
       setViewMode("sagittal");
       setSliceIndex(Math.floor(dims[2] / 2));
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
     };
 
     loadFile();
@@ -243,6 +250,8 @@ export default function NiftiViewer({ file, landmarks = [] }: NiftiViewerProps) 
     const [xDim, yDim, zDim] = volumeInfo.dims;
 
     setViewMode(mode);
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
 
     if (mode === "sagittal") {
       setSliceIndex(Math.floor(zDim / 2));
@@ -272,6 +281,35 @@ export default function NiftiViewer({ file, landmarks = [] }: NiftiViewerProps) 
     if (viewMode === "coronal") return "X";
     return "Y";
   };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setDragging(true);
+    dragOrigin.current = { mx: e.clientX, my: e.clientY, px: pan.x, py: pan.y };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!dragging) return;
+    const { mx, my, px, py } = dragOrigin.current;
+    setPan({ x: px + (e.clientX - mx), y: py + (e.clientY - my) });
+  };
+
+  const stopDrag = () => setDragging(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    setDragging(true);
+    dragOrigin.current = { mx: t.clientX, my: t.clientY, px: pan.x, py: pan.y };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    const { mx, my, px, py } = dragOrigin.current;
+    setPan({ x: px + (t.clientX - mx), y: py + (t.clientY - my) });
+  };
+
+  const resetView = () => { setZoom(1); setPan({ x: 0, y: 0 }); };
 
   if (!file) {
     return (
@@ -307,11 +345,48 @@ export default function NiftiViewer({ file, landmarks = [] }: NiftiViewerProps) 
         ))}
       </div>
 
-      <div className="flex justify-center overflow-hidden rounded-xl bg-black">
-        <canvas
-          ref={canvasRef}
-          className="max-h-[520px] w-auto rounded-xl object-contain"
-        />
+      <div
+        className="relative overflow-hidden rounded-xl bg-black"
+        style={{ minHeight: 200, cursor: dragging ? "grabbing" : "grab" }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={stopDrag}
+        onMouseLeave={stopDrag}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={stopDrag}
+      >
+        <div className="flex justify-center">
+          <canvas
+            ref={canvasRef}
+            className="max-h-[520px] w-auto rounded-xl object-contain select-none"
+            style={{
+              transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+              transformOrigin: "center center",
+              transition: dragging ? "none" : "transform 0.15s ease",
+              pointerEvents: "none",
+            }}
+          />
+        </div>
+        <div className="absolute bottom-3 right-3 flex gap-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); setZoom(z => Math.min(z + 0.25, 3)); }}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-black/70 text-white backdrop-blur-sm hover:bg-white/10 transition-colors text-lg leading-none"
+            aria-label="Zoom in"
+          >+</button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setZoom(z => Math.max(z - 0.25, 0.5)); }}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-black/70 text-white backdrop-blur-sm hover:bg-white/10 transition-colors text-lg leading-none"
+            aria-label="Zoom out"
+          >−</button>
+          {(zoom !== 1 || pan.x !== 0 || pan.y !== 0) && (
+            <button
+              onClick={(e) => { e.stopPropagation(); resetView(); }}
+              className="flex h-8 items-center justify-center rounded-lg border border-white/20 bg-black/70 px-2 text-xs text-gray-400 backdrop-blur-sm hover:bg-white/10 transition-colors"
+              aria-label="Reset view"
+            >reset</button>
+          )}
+        </div>
       </div>
 
       <div className="mt-5">
