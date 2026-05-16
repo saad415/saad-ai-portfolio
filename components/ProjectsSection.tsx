@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ProjectCard from "./ProjectCard";
 
@@ -19,12 +19,29 @@ type Filter = (typeof FILTERS)[number];
 
 export default function ProjectsSection({ projects }: { projects: Project[] }) {
   const [active, setActive] = useState<Filter>("All");
+  const [restoreKey, setRestoreKey] = useState(0);
+
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+
+      setActive("All");
+      setRestoreKey((key) => key + 1);
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
 
   const filtered =
     active === "All" ? projects : projects.filter((p) => p.categoryTag === active);
 
   return (
-    <section id="projects" className="relative w-full px-[5vw] py-28">
+    <section
+      key={restoreKey}
+      id="projects"
+      className="relative w-full px-[5vw] py-28"
+    >
       {/* Header */}
       <motion.div
         initial={{ y: 24 }}

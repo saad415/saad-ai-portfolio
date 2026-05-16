@@ -45,6 +45,26 @@ const projects: Project[] = [
     href: "/projects/spotify",
   },
   {
+    title: "Weather Deep Learning Classifier",
+    category: "Computer Vision",
+    categoryTag: "AI/ML",
+    description:
+      "Transfer-learning image classifier that uses a fine-tuned VGG16 model to identify weather conditions from uploaded images, served through a Flask web app and Docker deployment.",
+    pipeline: ["Image Upload", "Flask API", "VGG16 CNN", "Weather Class", "Render Deploy"],
+    tech: ["Python", "TensorFlow", "Keras", "VGG16", "Flask", "Docker"],
+    href: "/projects/weather-deep-learning",
+  },
+  {
+    title: "Store Sales Excel Dashboard",
+    category: "Business Analytics",
+    categoryTag: "Data Engineering",
+    description:
+      "Interactive Excel sales report that cleans inconsistent store order data and uses slicers, charts, and pivot-style analysis to surface customer, region, channel, and category insights.",
+    pipeline: ["Raw Sales Data", "Excel Cleaning", "Age Groups", "Charts", "Slicers", "Insights"],
+    tech: ["Excel", "Data Cleaning", "Pivot Analysis", "Slicers", "Dashboarding"],
+    href: "/projects/store-sales-excel",
+  },
+  {
     title: "Vertebral Labelling Study",
     category: "Research",
     categoryTag: "Research",
