@@ -8,15 +8,6 @@ import type { Project }  from "@/components/ProjectsSection";
 // ── Add your real projects here ──
 const projects: Project[] = [
   {
-    title: "MRI Preprocessing Pipeline",
-    category: "MLOps",
-    categoryTag: "AI/ML",
-    description:
-      "Automated DICOM ingestion, bias-field correction, and NIfTI conversion pipeline with a web dashboard for radiologists.",
-    tech: ["Python", "SimpleITK", "Celery", "React"],
-    href: "/projects/mri-pipeline",
-  },
-  {
     title: "Portfolio Website",
     category: "Full Stack",
     categoryTag: "Full Stack",
@@ -54,15 +45,6 @@ const projects: Project[] = [
     pipeline: ["Raw Sales Data", "Excel Cleaning", "Age Groups", "Charts", "Slicers", "Insights"],
     tech: ["Excel", "Data Cleaning", "Pivot Analysis", "Slicers", "Dashboarding"],
     href: "/projects/store-sales-excel",
-  },
-  {
-    title: "Vertebral Labelling Study",
-    category: "Research",
-    categoryTag: "Research",
-    description:
-      "Comparative study of atlas-based vs deep learning approaches for vertebral labelling in low-field MRI.",
-    tech: ["Python", "PyTorch", "ANTs", "LaTeX"],
-    href: "/projects/labelling-study",
   },
 ];
 

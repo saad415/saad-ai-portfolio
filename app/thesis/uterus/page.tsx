@@ -1,5 +1,5 @@
 import Navbar from "@/components/Navbar";
-import { BookOpen, ArrowLeft, Target, FlaskConical, BarChart3, Cpu, ChevronRight } from "lucide-react";
+import { ArrowLeft, Target, FlaskConical, BarChart3, Cpu, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 const MetricCard = ({ value, label, sub }: { value: string; label: string; sub: string }) => (
@@ -42,14 +42,6 @@ export default function UterusThesisPage() {
         </div>
 
         <div className="mt-8 flex flex-wrap gap-3">
-          <a
-            href="/thesis-uterus.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full bg-pink-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-pink-300"
-          >
-            <BookOpen size={15} /> Download PDF
-          </a>
           <Link
             href="/projects/uterus-demo"
             className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-pink-400 hover:text-pink-400"
@@ -82,13 +74,13 @@ export default function UterusThesisPage() {
           </span>
           <div>
             <h2 className="text-xl font-semibold text-white">Problem Statement</h2>
-            <p className="mt-3 leading-8 text-zinc-400">
+            <p className="mt-3 max-w-4xl text-base leading-7 text-zinc-400 md:text-lg md:leading-8 lg:text-xl lg:leading-9">
               Uterine biometry — measuring fundal thickness, body length, cervical length, and AP diameter — is
               essential for managing endometrial cancer, fibroids, and endometriosis. Yet it is performed manually
               with high inter-observer variability. <span className="text-white font-medium">No prior automated 3D approach</span> existed
               for multi-landmark localization from a single pelvic MRI acquisition.
             </p>
-            <p className="mt-3 leading-8 text-zinc-400">
+            <p className="mt-3 max-w-4xl text-base leading-7 text-zinc-400 md:text-lg md:leading-8 lg:text-xl lg:leading-9">
               The six anatomical targets — APD-1, APD-2, Fundus Outer, Cavity Cervix, Inner OS, and Cavity Fundus —
               span the full uterine extent and vary significantly in appearance across acquisition protocols, making
               a single-model approach particularly challenging.
@@ -102,19 +94,20 @@ export default function UterusThesisPage() {
           </span>
           <div>
             <h2 className="text-xl font-semibold text-white">Approach</h2>
-            <p className="mt-3 leading-8 text-zinc-400">
+            <p className="mt-3 max-w-4xl text-base leading-7 text-zinc-400 md:text-lg md:leading-8 lg:text-xl lg:leading-9">
               Proposed a <span className="text-white font-medium">segmentation-guided multi-decoder 3D U-Net</span> predicting all six uterine
               landmarks simultaneously via dedicated decoder branches. Three key innovations drive performance:
             </p>
             <ul className="mt-4 space-y-3">
               {[
-                { title: "SharpHeatmapLoss", body: "A custom loss function combining MSE with a cubic penalty term that forces sharply peaked Gaussian heatmaps. Standard MSE allows diffuse activations; the cubic term penalizes spread disproportionately, compelling the network to localize with sub-voxel precision." },
+                { title: "Geometrically Consistent Augmentation", body: "In-plane rotations and left-right flips with coordinate transformations across LPS, RAS, and voxel space ensure landmark annotations remain valid after augmentation, exposing the model to the full range of uterine tilt and orientation seen in real patients." },
                 { title: "ROI-Guided Inference", body: "Uterine segmentation masks are used to crop the inference region, eliminating background noise and reducing false activations from pelvic structures. The model only processes voxels within the uterine envelope." },
-                { title: "Dual-Model Architecture", body: "TwoHead U-Net (APD-1, APD-2, Fundus Outer) and ThreeHead U-Net (Cavity Cervix, Inner OS, Cavity Fundus) each specialize on anatomically related landmark subsets, allowing targeted decoder capacity for each group." },
+                { title: "Dual-Model Architecture", body: "Two custom 3D U-Nets with shared encoders for contextual learning of landmark relationships, and independent decoder branches per landmark group: Model 1 for APD-1, APD-2, and Fundus Outer; Model 2 for Cavity Cervix, Inner OS, and Cavity Fundus. The shared encoders capture inter-landmark spatial context while separate decoders specialize on landmark-specific features, preventing cross-task gradient interference." },
+                { title: "SharpHeatmapLoss", body: "A custom loss function combining MSE with a cubic penalty term that forces sharply peaked Gaussian heatmaps. Standard MSE allows diffuse activations; the cubic term penalizes spread disproportionately, compelling the network to localize with sub-voxel precision." },
               ].map(({ title, body }) => (
                 <li key={title} className="flex gap-3">
                   <ChevronRight size={16} className="mt-1 shrink-0 text-pink-400" />
-                  <p className="leading-7 text-zinc-400"><span className="font-semibold text-white">{title}:</span> {body}</p>
+                  <p className="max-w-4xl text-base leading-7 text-zinc-400 md:text-lg md:leading-8 lg:text-xl lg:leading-9"><span className="font-semibold text-white">{title}:</span> {body}</p>
                 </li>
               ))}
             </ul>
@@ -134,11 +127,11 @@ export default function UterusThesisPage() {
         <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 overflow-x-auto space-y-10">
           {/* Pipeline */}
           <div>
-            <p className="mb-4 text-xs uppercase tracking-widest text-zinc-600">Inference Pipeline</p>
-            <div className="flex items-center gap-2 flex-wrap text-sm text-zinc-300">
+            <p className="mb-4 text-sm uppercase tracking-widest text-zinc-600 md:text-base">Inference Pipeline</p>
+            <div className="flex items-center gap-2 flex-wrap text-base text-zinc-300 md:text-lg">
               {["T2 Pelvic MRI", "Uterus Segmentation Mask", "ROI Crop", "Isotropic Resampling (1mm³)", "Resize to 96³", "TwoHead U-Net", "ThreeHead U-Net", "Heatmap Peak Extraction", "6 LPS Landmarks"].map((step, i, arr) => (
                 <span key={step} className="flex items-center gap-2">
-                  <span className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs">{step}</span>
+                  <span className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm md:text-base">{step}</span>
                   {i < arr.length - 1 && <ChevronRight size={14} className="text-zinc-600 shrink-0" />}
                 </span>
               ))}
@@ -147,15 +140,15 @@ export default function UterusThesisPage() {
 
           {/* SharpHeatmapLoss */}
           <div>
-            <p className="mb-4 text-xs uppercase tracking-widest text-zinc-600">SharpHeatmapLoss</p>
+            <p className="mb-4 text-sm uppercase tracking-widest text-zinc-600 md:text-base">SharpHeatmapLoss</p>
             <div className="rounded-2xl border border-pink-400/20 bg-pink-400/5 p-5">
-              <div className="flex flex-wrap items-center gap-3 justify-center text-sm">
-                <span className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 font-mono text-xs text-pink-300">L = MSE(ŷ, y)</span>
+              <div className="flex flex-wrap items-center gap-3 justify-center text-base md:text-lg">
+                <span className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 font-mono text-sm text-pink-300 md:text-base">L = MSE(ŷ, y)</span>
                 <span className="text-zinc-500">+</span>
-                <span className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 font-mono text-xs text-pink-300">λ · Σ(ŷ³)</span>
-                <span className="text-zinc-500 text-xs">(cubic spread penalty)</span>
+                <span className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 font-mono text-sm text-pink-300 md:text-base">λ · Σ(ŷ³)</span>
+                <span className="text-sm text-zinc-500 md:text-base">(cubic spread penalty)</span>
               </div>
-              <p className="mt-3 text-xs text-center text-zinc-500">
+              <p className="mx-auto mt-3 max-w-4xl text-center text-sm leading-6 text-zinc-500 md:text-base md:leading-7">
                 The cubic term penalizes diffuse activations disproportionately, forcing the network to concentrate probability mass at the true landmark center.
               </p>
             </div>
@@ -163,39 +156,39 @@ export default function UterusThesisPage() {
 
           {/* Dual model */}
           <div>
-            <p className="mb-4 text-xs uppercase tracking-widest text-zinc-600">Dual-Model Architecture</p>
+            <p className="mb-4 text-sm uppercase tracking-widest text-zinc-600 md:text-base">Dual-Model Architecture</p>
             <div className="grid md:grid-cols-2 gap-5">
               {/* TwoHead */}
               <div className="rounded-2xl border border-blue-400/20 bg-blue-400/5 p-5">
-                <p className="text-center text-xs uppercase tracking-widest text-blue-400 mb-5">Model 1 — TwoHead U-Net</p>
+                <p className="text-center text-sm uppercase tracking-widest text-blue-400 mb-5 md:text-base">Model 1 — TwoHead U-Net</p>
                 <div className="flex flex-col items-center gap-2">
-                  <div className="rounded-lg border border-blue-400/20 bg-blue-400/5 px-4 py-2 text-xs text-blue-300 text-center w-full">Input: 96³ MRI crop</div>
+                  <div className="rounded-lg border border-blue-400/20 bg-blue-400/5 px-4 py-2 text-sm text-blue-300 text-center w-full md:text-base">Input: 96³ MRI crop</div>
                   <div className="h-3 w-px bg-white/10" />
-                  <div className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs text-zinc-300 text-center w-full">Shared 3D Encoder (4 levels)</div>
+                  <div className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-300 text-center w-full md:text-base">Shared 3D Encoder (4 levels)</div>
                   <div className="h-3 w-px bg-white/10" />
-                  <div className="grid grid-cols-2 gap-2 w-full">
-                    <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-center text-zinc-300">Decoder A<br/><span className="text-zinc-500">APD-1, APD-2</span></div>
-                    <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-center text-zinc-300">Decoder B<br/><span className="text-zinc-500">Fundus Outer</span></div>
+                  <div className="grid grid-cols-1 gap-2 w-full sm:grid-cols-2">
+                    <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-center text-zinc-300 md:text-base">Decoder A<br/><span className="text-zinc-500">APD-1, APD-2</span></div>
+                    <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-center text-zinc-300 md:text-base">Decoder B<br/><span className="text-zinc-500">Fundus Outer</span></div>
                   </div>
                   <div className="h-3 w-px bg-white/10" />
-                  <div className="rounded-lg border border-blue-400/20 bg-blue-400/5 px-4 py-2 text-xs text-blue-300 text-center w-full font-medium">3 Heatmaps → 3 Landmark Coords</div>
+                  <div className="rounded-lg border border-blue-400/20 bg-blue-400/5 px-4 py-2 text-sm text-blue-300 text-center w-full font-medium md:text-base">3 Heatmaps → 3 Landmark Coords</div>
                 </div>
               </div>
               {/* ThreeHead */}
               <div className="rounded-2xl border border-purple-400/20 bg-purple-400/5 p-5">
-                <p className="text-center text-xs uppercase tracking-widest text-purple-400 mb-5">Model 2 — ThreeHead U-Net</p>
+                <p className="text-center text-sm uppercase tracking-widest text-purple-400 mb-5 md:text-base">Model 2 — ThreeHead U-Net</p>
                 <div className="flex flex-col items-center gap-2">
-                  <div className="rounded-lg border border-purple-400/20 bg-purple-400/5 px-4 py-2 text-xs text-purple-300 text-center w-full">Input: 96³ MRI crop</div>
+                  <div className="rounded-lg border border-purple-400/20 bg-purple-400/5 px-4 py-2 text-sm text-purple-300 text-center w-full md:text-base">Input: 96³ MRI crop</div>
                   <div className="h-3 w-px bg-white/10" />
-                  <div className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs text-zinc-300 text-center w-full">Shared 3D Encoder (4 levels)</div>
+                  <div className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-300 text-center w-full md:text-base">Shared 3D Encoder (4 levels)</div>
                   <div className="h-3 w-px bg-white/10" />
-                  <div className="grid grid-cols-3 gap-2 w-full">
-                    <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-xs text-center text-zinc-300">Dec. A<br/><span className="text-zinc-500">Cav. Cervix</span></div>
-                    <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-xs text-center text-zinc-300">Dec. B<br/><span className="text-zinc-500">Inner OS</span></div>
-                    <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-xs text-center text-zinc-300">Dec. C<br/><span className="text-zinc-500">Cav. Fundus</span></div>
+                  <div className="grid grid-cols-1 gap-2 w-full sm:grid-cols-3">
+                    <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-sm text-center text-zinc-300 md:text-base">Dec. A<br/><span className="text-zinc-500">Cav. Cervix</span></div>
+                    <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-sm text-center text-zinc-300 md:text-base">Dec. B<br/><span className="text-zinc-500">Inner OS</span></div>
+                    <div className="rounded-lg border border-white/10 bg-white/5 px-2 py-2 text-sm text-center text-zinc-300 md:text-base">Dec. C<br/><span className="text-zinc-500">Cav. Fundus</span></div>
                   </div>
                   <div className="h-3 w-px bg-white/10" />
-                  <div className="rounded-lg border border-purple-400/20 bg-purple-400/5 px-4 py-2 text-xs text-purple-300 text-center w-full font-medium">3 Heatmaps → 3 Landmark Coords</div>
+                  <div className="rounded-lg border border-purple-400/20 bg-purple-400/5 px-4 py-2 text-sm text-purple-300 text-center w-full font-medium md:text-base">3 Heatmaps → 3 Landmark Coords</div>
                 </div>
               </div>
             </div>
@@ -203,7 +196,7 @@ export default function UterusThesisPage() {
 
           <div className="flex flex-wrap gap-2 pt-2 border-t border-white/8">
             {["PyTorch", "3D U-Net", "SharpHeatmapLoss", "96³ Input", "1 mm³ Isotropic", "ROI-Guided Inference", "Gaussian σ=3mm", "Adam Optimizer"].map((t) => (
-              <span key={t} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-400">{t}</span>
+              <span key={t} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-zinc-400 md:text-base">{t}</span>
             ))}
           </div>
         </div>
@@ -218,14 +211,14 @@ export default function UterusThesisPage() {
           <h2 className="mt-1 text-xl font-semibold text-white">Per-Landmark Results</h2>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-white/10">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-2xl border border-white/10">
+          <table className="w-full min-w-[720px] text-base md:text-lg">
             <thead>
               <tr className="border-b border-white/10 bg-white/[0.04]">
-                <th className="px-5 py-3.5 text-left text-xs uppercase tracking-widest text-zinc-500">Landmark</th>
-                <th className="px-5 py-3.5 text-right text-xs uppercase tracking-widest text-zinc-500">Mean Error</th>
-                <th className="px-5 py-3.5 text-left text-xs uppercase tracking-widest text-zinc-500 hidden md:table-cell">Model</th>
-                <th className="px-5 py-3.5 text-left text-xs uppercase tracking-widest text-zinc-500 hidden md:table-cell">Bar</th>
+                <th className="px-5 py-3.5 text-left text-sm uppercase tracking-widest text-zinc-500">Landmark</th>
+                <th className="px-5 py-3.5 text-right text-sm uppercase tracking-widest text-zinc-500">Mean Error</th>
+                <th className="px-5 py-3.5 text-left text-sm uppercase tracking-widest text-zinc-500">Model</th>
+                <th className="px-5 py-3.5 text-left text-sm uppercase tracking-widest text-zinc-500">Bar</th>
               </tr>
             </thead>
             <tbody>
@@ -242,12 +235,12 @@ export default function UterusThesisPage() {
                     <span className={row.best ? "text-pink-400" : "text-white"}>{row.lm}</span>
                   </td>
                   <td className={`px-5 py-3.5 text-right font-mono ${row.best ? "text-pink-400 font-semibold" : "text-zinc-300"}`}>{row.err}</td>
-                  <td className="px-5 py-3.5 hidden md:table-cell">
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${row.model === "ThreeHead" ? "bg-purple-400/10 text-purple-300" : "bg-blue-400/10 text-blue-300"}`}>
+                  <td className="px-5 py-3.5">
+                    <span className={`rounded-full px-2.5 py-1 text-sm ${row.model === "ThreeHead" ? "bg-purple-400/10 text-purple-300" : "bg-blue-400/10 text-blue-300"}`}>
                       {row.model}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 hidden md:table-cell">
+                  <td className="px-5 py-3.5">
                     <div className="h-1.5 w-full rounded-full bg-white/10">
                       <div className={`h-full rounded-full ${row.best ? "bg-pink-400" : "bg-pink-400/40"}`} style={{ width: `${row.pct}%` }} />
                     </div>
@@ -257,14 +250,14 @@ export default function UterusThesisPage() {
             </tbody>
           </table>
         </div>
-        <p className="mt-3 text-xs text-zinc-600">Scale max ≈ 6.7 mm · Lower = better · Cavity Cervix & Fundus achieve sub-3 mm precision.</p>
+        <p className="mt-3 text-sm leading-6 text-zinc-600 md:text-base">Scale max ≈ 6.7 mm · Lower = better · Cavity Cervix & Fundus achieve sub-3 mm precision.</p>
       </section>
 
       {/* Clinical impact */}
       <section className="mx-auto max-w-5xl px-6 pb-24">
         <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8">
-          <h2 className="mb-6 text-xl font-semibold text-white">Clinical Impact & Future Directions</h2>
-          <p className="mb-4 leading-7 text-zinc-400">
+          <h2 className="mb-6 text-2xl font-semibold text-white">Clinical Impact & Future Directions</h2>
+          <p className="mb-4 max-w-4xl text-base leading-7 text-zinc-400 md:text-lg md:leading-8 lg:text-xl lg:leading-9">
             This is the <span className="text-white font-medium">first automated 3D approach</span> for uterine multi-landmark localization from pelvic MRI, enabling:
           </p>
           <ul className="space-y-3 mb-6">
@@ -275,18 +268,18 @@ export default function UterusThesisPage() {
             ].map(({ title, body }) => (
               <li key={title} className="flex gap-3">
                 <ChevronRight size={16} className="mt-1 shrink-0 text-pink-400" />
-                <p className="leading-7 text-zinc-400"><span className="font-semibold text-white">{title}</span> — {body}</p>
+                <p className="max-w-4xl text-base leading-7 text-zinc-400 md:text-lg md:leading-8 lg:text-xl lg:leading-9"><span className="font-semibold text-white">{title}</span> — {body}</p>
               </li>
             ))}
           </ul>
-          <p className="leading-7 text-zinc-400">
+          <p className="max-w-4xl text-base leading-7 text-zinc-400 md:text-lg md:leading-8 lg:text-xl lg:leading-9">
             Future directions include joint spinal-uterine landmark prediction from a single pelvic MRI acquisition,
             leveraging the geometric relationship between the sacrum and uterus established in Thesis I.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-2 pt-4 border-t border-white/8">
             {["Python", "PyTorch", "3D U-Net", "SharpHeatmapLoss", "NIfTI", "nibabel", "SciPy", "3D Slicer", "ROI-Guided Inference"].map((t) => (
-              <span key={t} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-400">{t}</span>
+              <span key={t} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-400 md:text-base">{t}</span>
             ))}
           </div>
         </div>

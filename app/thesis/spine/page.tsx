@@ -1,5 +1,5 @@
 import Navbar from "@/components/Navbar";
-import { BookOpen, ArrowLeft, Target, FlaskConical, BarChart3, Cpu, ChevronRight } from "lucide-react";
+import { ArrowLeft, Target, FlaskConical, BarChart3, Cpu, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 const MetricCard = ({ value, label, sub }: { value: string; label: string; sub: string }) => (
@@ -28,7 +28,7 @@ export default function SpineThesisPage() {
           Thesis I · Sacral MRI · Sep 2025 – Mar 2026
         </p>
         <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-5xl">
-          Automatic Detection of Lumbosacral<br className="hidden md:block" /> Vertebrae in Pelvic MRI
+          Automatic lumbosacral vertebra localization in variable field-of-view pelvic MRI
         </h1>
         <p className="mt-3 text-lg text-zinc-400 italic">
           A Deep Learning Approach for Variable Field-of-View Pelvic Imaging
@@ -42,14 +42,6 @@ export default function SpineThesisPage() {
         </div>
 
         <div className="mt-8 flex flex-wrap gap-3">
-          <a
-            href="/thesis-spine.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full bg-green-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-green-300"
-          >
-            <BookOpen size={15} /> Download PDF
-          </a>
           <Link
             href="/projects/spine-demo"
             className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-green-400 hover:text-green-400"
@@ -82,13 +74,13 @@ export default function SpineThesisPage() {
           </span>
           <div>
             <h2 className="text-xl font-semibold text-white">The Problem This Work Solves</h2>
-            <p className="mt-3 leading-8 text-zinc-400">
+            <p className="mt-3 max-w-4xl text-base leading-7 text-zinc-400 md:text-lg md:leading-8 lg:text-xl lg:leading-9">
               Accurate lumbosacral vertebrae localization in pelvic MRI is clinically critical for spinal surgery
               planning, radiation therapy field definition, endometriosis staging, and large-scale morphometric studies.
               Yet existing automated methods fundamentally fail in this setting — they assume full spinal visibility
               from C2 or T1, which is never available in pelvic MRI.
             </p>
-            <p className="mt-3 leading-8 text-zinc-400">
+            <p className="mt-3 max-w-4xl text-base leading-7 text-zinc-400 md:text-lg md:leading-8 lg:text-xl lg:leading-9">
               In pelvic imaging, the spine appears only incidentally: <span className="text-white font-medium">84.7% of cases</span> show
               partial or sacral-only coverage. No prior work had addressed individual S1–S5 sacral vertebra detection
               in this context, leaving a critical gap in automated pelvic MRI analysis.
@@ -102,7 +94,7 @@ export default function SpineThesisPage() {
           </span>
           <div>
             <h2 className="text-xl font-semibold text-white">The Innovation: S1-Anchored Detection</h2>
-            <p className="mt-3 leading-8 text-zinc-400">
+            <p className="mt-3 max-w-4xl text-base leading-7 text-zinc-400 md:text-lg md:leading-8 lg:text-xl lg:leading-9">
               The core insight is that pelvic MRI <span className="text-white font-medium">always captures the S1 vertebra</span> — it is
               the anatomical bridge between the sacrum and the pelvis. Rather than requiring a superior reference
               (the conventional approach), this work proposes making S1 the anchor point for bidirectional vertebral
@@ -116,7 +108,7 @@ export default function SpineThesisPage() {
               ].map(({ title, body }) => (
                 <li key={title} className="flex gap-3">
                   <ChevronRight size={16} className="mt-1 shrink-0 text-green-400" />
-                  <p className="leading-7 text-zinc-400"><span className="font-semibold text-white">{title}:</span> {body}</p>
+                  <p className="max-w-4xl text-base leading-7 text-zinc-400 md:text-lg md:leading-8 lg:text-xl lg:leading-9"><span className="font-semibold text-white">{title}:</span> {body}</p>
                 </li>
               ))}
             </ul>
@@ -135,57 +127,57 @@ export default function SpineThesisPage() {
 
         <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 overflow-x-auto">
           {/* Pipeline flow */}
-          <p className="mb-6 text-xs uppercase tracking-widest text-zinc-600">Inference Pipeline</p>
-          <div className="flex items-center gap-2 flex-wrap text-sm text-zinc-300 mb-10">
+          <p className="mb-6 text-sm uppercase tracking-widest text-zinc-600 md:text-base">Inference Pipeline</p>
+          <div className="flex items-center gap-2 flex-wrap text-base text-zinc-300 md:text-lg mb-10">
             {["Pelvic MRI (NIfTI)", "Isotropic Resampling", "Patch Extraction (biased)", "Dual-Head 3D U-Net", "S1 Heatmap → Anchor", "Bidirectional Label Propagation", "L4–S5 Landmarks"].map((step, i, arr) => (
               <span key={step} className="flex items-center gap-2">
-                <span className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs">{step}</span>
+                <span className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm md:text-base">{step}</span>
                 {i < arr.length - 1 && <ChevronRight size={14} className="text-zinc-600 shrink-0" />}
               </span>
             ))}
           </div>
 
           {/* Network diagram */}
-          <p className="mb-6 text-xs uppercase tracking-widest text-zinc-600">Dual-Head 3D U-Net</p>
+          <p className="mb-6 text-sm uppercase tracking-widest text-zinc-600 md:text-base">Dual-Head 3D U-Net</p>
           <div className="flex flex-col items-center gap-3">
             {/* Input */}
-            <div className="rounded-xl border border-green-400/30 bg-green-400/5 px-8 py-3 text-sm font-medium text-green-300 text-center">
+            <div className="rounded-xl border border-green-400/30 bg-green-400/5 px-8 py-3 text-base font-medium text-green-300 text-center md:text-lg">
               Input Volume — 3D MRI Patch
             </div>
             <div className="h-4 w-px bg-white/15" />
 
             {/* Encoder */}
             <div className="w-full max-w-2xl rounded-2xl border border-white/15 bg-white/[0.03] p-5">
-              <p className="text-center text-xs uppercase tracking-widest text-zinc-500 mb-4">Shared Encoder</p>
+              <p className="text-center text-sm uppercase tracking-widest text-zinc-500 mb-4 md:text-base">Shared Encoder</p>
               <div className="flex justify-center gap-3 flex-wrap">
                 {["Conv3D + BN + ReLU", "Residual Block ×2", "Max Pool ↓2", "Residual Block ×2", "Max Pool ↓4", "Bottleneck"].map((b) => (
-                  <span key={b} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-zinc-300">{b}</span>
+                  <span key={b} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-300 md:text-base">{b}</span>
                 ))}
               </div>
             </div>
             <div className="h-4 w-px bg-white/15" />
 
             {/* Decoder branches */}
-            <div className="w-full max-w-2xl grid grid-cols-2 gap-4">
+            <div className="w-full max-w-2xl grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-blue-400/20 bg-blue-400/5 p-5">
-                <p className="text-center text-xs uppercase tracking-widest text-blue-400 mb-4">Head 1 · All Vertebrae</p>
+                <p className="text-center text-sm uppercase tracking-widest text-blue-400 mb-4 md:text-base">Head 1 · All Vertebrae</p>
                 <div className="flex flex-col gap-2">
                   {["Decoder + Skip Connections", "ConvTranspose3D ×3", "1×1×1 Conv"].map((b) => (
-                    <div key={b} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-center text-zinc-300">{b}</div>
+                    <div key={b} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-center text-zinc-300 md:text-base">{b}</div>
                   ))}
                 </div>
-                <div className="mt-3 rounded-lg border border-blue-400/20 bg-blue-400/5 px-3 py-2 text-xs text-center text-blue-300 font-medium">
+                <div className="mt-3 rounded-lg border border-blue-400/20 bg-blue-400/5 px-3 py-2 text-sm text-center text-blue-300 font-medium md:text-base">
                   Multi-class Heatmap (L4–S5)
                 </div>
               </div>
               <div className="rounded-2xl border border-green-400/20 bg-green-400/5 p-5">
-                <p className="text-center text-xs uppercase tracking-widest text-green-400 mb-4">Head 2 · S1 Dedicated</p>
+                <p className="text-center text-sm uppercase tracking-widest text-green-400 mb-4 md:text-base">Head 2 · S1 Dedicated</p>
                 <div className="flex flex-col gap-2">
                   {["Decoder + Skip Connections", "ConvTranspose3D ×3", "1×1×1 Conv"].map((b) => (
-                    <div key={b} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-center text-zinc-300">{b}</div>
+                    <div key={b} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-center text-zinc-300 md:text-base">{b}</div>
                   ))}
                 </div>
-                <div className="mt-3 rounded-lg border border-green-400/20 bg-green-400/5 px-3 py-2 text-xs text-center text-green-300 font-medium">
+                <div className="mt-3 rounded-lg border border-green-400/20 bg-green-400/5 px-3 py-2 text-sm text-center text-green-300 font-medium md:text-base">
                   S1 Anchor Heatmap
                 </div>
               </div>
@@ -194,24 +186,24 @@ export default function SpineThesisPage() {
 
             {/* Post-processing */}
             <div className="w-full max-w-2xl rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-5">
-              <p className="text-center text-xs uppercase tracking-widest text-yellow-400 mb-4">S1-Anchored Post-Processing</p>
+              <p className="text-center text-sm uppercase tracking-widest text-yellow-400 mb-4 md:text-base">S1-Anchored Post-Processing</p>
               <div className="flex justify-center gap-3 flex-wrap">
                 {["Peak Extraction (S1)", "Bidirectional Propagation", "Caudal: S2→S5", "Cranial: L5→L4"].map((b) => (
-                  <span key={b} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-zinc-300">{b}</span>
+                  <span key={b} className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-300 md:text-base">{b}</span>
                 ))}
               </div>
             </div>
             <div className="h-4 w-px bg-white/15" />
 
             {/* Output */}
-            <div className="rounded-xl border border-green-400/30 bg-green-400/5 px-8 py-3 text-sm font-medium text-green-300 text-center">
+            <div className="rounded-xl border border-green-400/30 bg-green-400/5 px-8 py-3 text-base font-medium text-green-300 text-center md:text-lg">
               Output — L4, L5, S1, S2, S3, S4, S5 Landmark Coordinates
             </div>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-2">
             {["~400K Parameters", "Adam Optimizer", "ReduceLROnPlateau", "MSE Heatmap Loss", "Gaussian σ=2mm", "Biased Patch Sampling 70%"].map((t) => (
-              <span key={t} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-400">{t}</span>
+              <span key={t} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-zinc-400 md:text-base">{t}</span>
             ))}
           </div>
         </div>
@@ -226,15 +218,15 @@ export default function SpineThesisPage() {
           <h2 className="mt-1 text-xl font-semibold text-white">Per-Vertebra Results</h2>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-white/10">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-2xl border border-white/10">
+          <table className="w-full min-w-[780px] text-base md:text-lg">
             <thead>
               <tr className="border-b border-white/10 bg-white/[0.04]">
-                <th className="px-5 py-3.5 text-left text-xs uppercase tracking-widest text-zinc-500">Vertebra</th>
-                <th className="px-5 py-3.5 text-right text-xs uppercase tracking-widest text-zinc-500">Mean Error</th>
-                <th className="px-5 py-3.5 text-right text-xs uppercase tracking-widest text-zinc-500">≤5 mm</th>
-                <th className="px-5 py-3.5 text-right text-xs uppercase tracking-widest text-zinc-500">≤10 mm</th>
-                <th className="px-5 py-3.5 text-left text-xs uppercase tracking-widest text-zinc-500 hidden md:table-cell">Bar</th>
+                <th className="px-5 py-3.5 text-left text-sm uppercase tracking-widest text-zinc-500">Vertebra</th>
+                <th className="px-5 py-3.5 text-right text-sm uppercase tracking-widest text-zinc-500">Mean Error</th>
+                <th className="px-5 py-3.5 text-right text-sm uppercase tracking-widest text-zinc-500">≤5 mm</th>
+                <th className="px-5 py-3.5 text-right text-sm uppercase tracking-widest text-zinc-500">≤10 mm</th>
+                <th className="px-5 py-3.5 text-left text-sm uppercase tracking-widest text-zinc-500">Bar</th>
               </tr>
             </thead>
             <tbody>
@@ -254,7 +246,7 @@ export default function SpineThesisPage() {
                   <td className={`px-5 py-3.5 text-right font-mono ${row.anchor ? "text-green-400 font-semibold" : "text-zinc-300"}`}>{row.err}</td>
                   <td className="px-5 py-3.5 text-right text-zinc-400">{row.p5}</td>
                   <td className={`px-5 py-3.5 text-right ${row.anchor && row.p10 === "100%" ? "text-green-400 font-semibold" : "text-zinc-400"}`}>{row.p10}</td>
-                  <td className="px-5 py-3.5 hidden md:table-cell">
+                  <td className="px-5 py-3.5">
                     <div className="h-1.5 w-full rounded-full bg-white/10">
                       <div className={`h-full rounded-full ${row.anchor ? "bg-green-400" : "bg-green-400/50"}`} style={{ width: `${row.pct}%` }} />
                     </div>
@@ -264,19 +256,19 @@ export default function SpineThesisPage() {
             </tbody>
           </table>
         </div>
-        <p className="mt-3 text-xs text-zinc-600">S1 anchor achieved 100% detection within 10 mm across all 44 test instances. S4–S5 show higher variance due to progressive developmental fusion.</p>
+        <p className="mt-3 text-sm leading-6 text-zinc-600 md:text-base">S1 anchor achieved 100% detection within 10 mm across all 44 test instances. S4–S5 show higher variance due to progressive developmental fusion.</p>
       </section>
 
       {/* Comparison */}
       <section className="mx-auto max-w-5xl px-6 pb-16">
-        <h2 className="mb-6 text-xl font-semibold text-white">Contextualized Against Prior Work</h2>
-        <div className="overflow-hidden rounded-2xl border border-white/10">
-          <table className="w-full text-sm">
+        <h2 className="mb-6 text-2xl font-semibold text-white">Contextualized Against Prior Work</h2>
+        <div className="overflow-x-auto rounded-2xl border border-white/10">
+          <table className="w-full min-w-[760px] text-base md:text-lg">
             <thead>
               <tr className="border-b border-white/10 bg-white/[0.04]">
-                <th className="px-5 py-3.5 text-left text-xs uppercase tracking-widest text-zinc-500">Method</th>
-                <th className="px-5 py-3.5 text-left text-xs uppercase tracking-widest text-zinc-500">Setting</th>
-                <th className="px-5 py-3.5 text-right text-xs uppercase tracking-widest text-zinc-500">Performance</th>
+                <th className="px-5 py-3.5 text-left text-sm uppercase tracking-widest text-zinc-500">Method</th>
+                <th className="px-5 py-3.5 text-left text-sm uppercase tracking-widest text-zinc-500">Setting</th>
+                <th className="px-5 py-3.5 text-right text-sm uppercase tracking-widest text-zinc-500">Performance</th>
               </tr>
             </thead>
             <tbody>
@@ -295,14 +287,14 @@ export default function SpineThesisPage() {
             </tbody>
           </table>
         </div>
-        <p className="mt-3 text-xs text-zinc-600">Results are within the range of spine-dedicated methods despite operating on a fundamentally harder problem: partial spinal coverage, lower through-plane resolution, and variable patient positioning.</p>
+        <p className="mt-3 text-sm leading-6 text-zinc-600 md:text-base">Results are within the range of spine-dedicated methods despite operating on a fundamentally harder problem: partial spinal coverage, lower through-plane resolution, and variable patient positioning.</p>
       </section>
 
       {/* Clinical Impact */}
       <section className="mx-auto max-w-5xl px-6 pb-24">
         <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-8">
-          <h2 className="mb-6 text-xl font-semibold text-white">Clinical Impact & Future Directions</h2>
-          <p className="mb-4 leading-7 text-zinc-400">
+          <h2 className="mb-6 text-2xl font-semibold text-white">Clinical Impact & Future Directions</h2>
+          <p className="mb-4 max-w-4xl text-base leading-7 text-zinc-400 md:text-lg md:leading-8 lg:text-xl lg:leading-9">
             This is the <span className="text-white font-medium">first published method</span> for individual S1–S5 sacral vertebra detection in pelvic MRI, enabling:
           </p>
           <ul className="space-y-3 mb-6">
@@ -313,17 +305,17 @@ export default function SpineThesisPage() {
             ].map(({ title, body }) => (
               <li key={title} className="flex gap-3">
                 <ChevronRight size={16} className="mt-1 shrink-0 text-green-400" />
-                <p className="leading-7 text-zinc-400"><span className="font-semibold text-white">{title}</span> {body}</p>
+                <p className="max-w-4xl text-base leading-7 text-zinc-400 md:text-lg md:leading-8 lg:text-xl lg:leading-9"><span className="font-semibold text-white">{title}</span> {body}</p>
               </li>
             ))}
           </ul>
-          <p className="leading-7 text-zinc-400">
+          <p className="max-w-4xl text-base leading-7 text-zinc-400 md:text-lg md:leading-8 lg:text-xl lg:leading-9">
             Future work is planned toward a <span className="text-white font-medium">unified pelvic MRI framework</span> that jointly predicts both spinal and uterine landmarks, leveraging the geometric relationship between the sacrum and uterus to mutually constrain predictions.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-2 pt-4 border-t border-white/8">
             {["Python", "PyTorch", "3D U-Net", "NIfTI / nibabel", "Gaussian Heatmap Regression", "SciPy", "3D Slicer", "Adam + ReduceLROnPlateau", "Multi-center evaluation"].map((t) => (
-              <span key={t} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-400">{t}</span>
+              <span key={t} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-400 md:text-base">{t}</span>
             ))}
           </div>
         </div>
