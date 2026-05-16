@@ -1,15 +1,13 @@
 "use client";
 
-import { ArrowRight, MapPin, Download } from "lucide-react";
+import { MapPin, Download } from "lucide-react";
 import { FaGithub, FaLinkedin } from "react-icons/fa";
 import Image from "next/image";
 
-const roles = ["AI Engineer", "Medical Imaging Researcher", "Full-Stack Developer"];
-
 const stats = [
-  { value: "3D",   label: "MRI Analysis" },
-  { value: "96%",  label: "Model Accuracy" },
-  { value: "Live", label: "Inference API" },
+  { value: "2+", label: "Years Software Engineering" },
+  { value: "3D", label: "MRI Systems" },
+  { value: "Full-stack", label: "ML Applications" },
 ];
 
 export default function Hero() {
@@ -47,7 +45,7 @@ export default function Hero() {
               className="font-medium text-green-400"
               style={{ fontSize: "clamp(0.8rem, 1.2vw, 1.2rem)" }}
             >
-              {roles[0]} &nbsp;·&nbsp; {roles[1]}
+              AI Engineer &nbsp;·&nbsp; Medical Imaging Specialist &nbsp;·&nbsp; Full-Stack
             </span>
           </div>
 
@@ -70,25 +68,13 @@ export default function Hero() {
                 >
                   {s.value}
                 </span>
-                <span className="text-xs text-zinc-500">{s.label}</span>
+                <span className="text-sm text-zinc-500">{s.label}</span>
               </div>
             ))}
           </div>
 
           {/* CTA buttons */}
           <div className="anim-fade-up anim-delay-6 mt-8 flex flex-wrap gap-3">
-            <a
-              href="/projects/spine-demo"
-              className="inline-flex items-center gap-2 rounded-full bg-green-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-green-300"
-            >
-              Try spine AI demo <ArrowRight size={16} />
-            </a>
-            <a
-              href="#projects"
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-green-400 hover:text-green-400"
-            >
-              View projects
-            </a>
             <a
               href="/Saad_Ahmad_CV.pdf"
               download

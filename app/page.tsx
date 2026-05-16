@@ -8,15 +8,6 @@ import type { Project }  from "@/components/ProjectsSection";
 // ── Add your real projects here ──
 const projects: Project[] = [
   {
-    title: "Spine Landmark Detection",
-    category: "Medical AI",
-    categoryTag: "AI/ML",
-    description:
-      "Production 3D U-Net that detects vertebral landmarks in sacral MRI with 96% accuracy. Served live via FastAPI.",
-    tech: ["PyTorch", "FastAPI", "Docker", "Next.js"],
-    href: "/projects/spine-demo",
-  },
-  {
     title: "MRI Preprocessing Pipeline",
     category: "MLOps",
     categoryTag: "AI/ML",

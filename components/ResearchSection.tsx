@@ -55,6 +55,9 @@ const StackChips = ({ stack }: { stack: string[] }) => (
   </div>
 );
 
+const JANA_HUTTER_SCHOLAR_URL =
+  "https://scholar.google.com/citations?hl=en&user=Wwj1FxcAAAAJ";
+
 /* ── Main component ── */
 
 export default function ResearchSection() {
@@ -76,10 +79,18 @@ export default function ResearchSection() {
           className="font-semibold leading-tight tracking-tight"
           style={{ fontSize: "clamp(1.6rem, 3vw, 3.5rem)" }}
         >
-          Master's Theses
+          Master&apos;s Thesis
         </h2>
         <p style={{ fontSize: "clamp(0.9rem, 1.05vw, 1.1rem)" }} className="mt-3 text-zinc-500">
-          FAU Erlangen-Nuremberg · Smart Imaging Lab · Supervisor: Prof. Dr. Jana Hutter
+          FAU Erlangen-Nuremberg · Smart Imaging Lab · Supervisor:{" "}
+          <a
+            href={JANA_HUTTER_SCHOLAR_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-zinc-400 transition hover:text-green-400"
+          >
+            Prof. Dr. Jana Hutter <ArrowUpRight size={13} />
+          </a>
         </p>
       </motion.div>
 
@@ -93,12 +104,12 @@ export default function ResearchSection() {
         transition={{ duration: 0.6 }}
       >
         <div className="mb-10">
-          <SectionTag>Thesis I · Sacral MRI · 2024</SectionTag>
+          <SectionTag>Thesis I · 17 September 2025 - 17 March 2026</SectionTag>
           <h3
             className="max-w-3xl font-semibold leading-tight tracking-tight"
             style={{ fontSize: "clamp(1.3rem, 2.4vw, 2.8rem)" }}
           >
-            Automated vertebral landmark detection in sacral MRI using deep learning
+            Automatic lumbosacral vertebra localization in variable field-of-view pelvic MRI
           </h3>
           <div className="mt-5 flex flex-wrap gap-3">
             <a
@@ -118,19 +129,19 @@ export default function ResearchSection() {
 
         <div className="mb-12 grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[
-            { value: "96%",  label: "Detection accuracy", sub: "on held-out test set" },
-            { value: "0.94", label: "Mean Dice score",     sub: "vertebral segmentation" },
-            { value: "1.4s", label: "Inference latency",   sub: "per volume, API avg" },
-            { value: "3D",   label: "U-Net architecture",  sub: "multi-task, end-to-end" },
+            { value: "4.21 mm", label: "Mean localization error", sub: "" },
+            { value: "S1-S5", label: "Individual sacral detection", sub: "" },
+            { value: "1.4s", label: "Per-volume inference", sub: "" },
+            { value: "Multi-Center", label: "MRI protocol robustness", sub: "" },
           ].map((m, i) => <MetricCard key={m.label} {...m} delay={i * 0.07} />)}
         </div>
 
         <div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-start lg:gap-16">
           <div className="flex flex-col gap-10">
             {[
-              { icon: Target,       title: "Problem Statement", body: "Automated vertebral landmark detection in sacral MRI remains challenging due to high variability in patient positioning, signal intensity, and partial field-of-view scans. Manual labelling by radiologists is slow and prone to inter-observer disagreement." },
-              { icon: FlaskConical, title: "Approach",          body: "Designed a multi-task 3D U-Net that jointly predicts vertebral heatmaps and segmentation masks from volumetric MRI. Training used a curriculum strategy with synthetic augmentation — random affine, bias-field, and k-space dropout — to handle low-signal edge cases." },
-              { icon: BarChart3,    title: "Results",           body: "Achieved 96% landmark detection accuracy and 0.94 mean Dice on the hold-out set, outperforming previous atlas-based baselines by +11 pp. The trained model is deployed via FastAPI and serves live predictions on this portfolio." },
+              { icon: Target,       title: "Problem Statement", body: "Automatic vertebra localization in pelvic MRI is challenging due to variable field-of-view coverage, anatomical diversity, and partial visibility of the lumbosacral spine. Manual landmark annotation is time-consuming and subject to inter-observer variability, limiting reproducibility in clinical workflows." },
+              { icon: FlaskConical, title: "Approach",          body: "Developed a dual-head 3D U-Net for volumetric vertebra landmark detection in sagittal T2-weighted pelvic MRI. The system jointly predicts vertebral center heatmaps and an anatomical S1 reference point, enabling robust S1-anchored labeling across incomplete or variable spine coverage." },
+              { icon: BarChart3,    title: "Results",           body: "Achieved a mean vertebral localization error of 4.21 mm across multi-center pelvic MRI datasets, with robust detection of lumbar and sacral vertebrae (L1-L5, S1-S5)." },
             ].map((s, i) => <NarrativeItem key={s.title} {...s} delay={i * 0.08} />)}
             <StackChips stack={["Python", "PyTorch", "3D U-Net", "FastAPI", "Docker", "NIfTI", "nibabel"]} />
           </div>
@@ -166,7 +177,7 @@ export default function ResearchSection() {
         transition={{ duration: 0.6 }}
       >
         <div className="mb-10">
-          <SectionTag>Thesis II · Pelvic MRI · Sep 2025 – Mar 2026</SectionTag>
+          <SectionTag>Thesis II · 17 September 2025 - 17 March 2026</SectionTag>
           <h3
             className="max-w-3xl font-semibold leading-tight tracking-tight"
             style={{ fontSize: "clamp(1.3rem, 2.4vw, 2.8rem)" }}
@@ -191,10 +202,10 @@ export default function ResearchSection() {
 
         <div className="mb-12 grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[
-            { value: "4.52mm", label: "Overall mean error",  sub: "192 landmarks evaluated" },
-            { value: "2.90mm", label: "Best: Cavity Cervix", sub: "highest precision" },
-            { value: "3.66mm", label: "Median error",        sub: "all 6 landmarks" },
-            { value: "32",     label: "Test cases",          sub: "3 acquisition protocols" },
+            { value: "4.52 mm", label: "Overall mean error", sub: "192 landmarks evaluated" },
+            { value: "2.90 mm", label: "Best landmark precision", sub: "Cavity Cervix" },
+            { value: "3.66 mm", label: "Median localization error", sub: "All 6 landmarks" },
+            { value: "32", label: "Multi-protocol test cases", sub: "3 acquisition protocols" },
           ].map((m, i) => <MetricCard key={m.label} {...m} delay={i * 0.07} />)}
         </div>
 
@@ -202,8 +213,8 @@ export default function ResearchSection() {
           <div className="flex flex-col gap-10">
             {[
               { icon: Target,       title: "Problem Statement", body: "Uterine biometry — measuring fundal thickness, body length, cervical length, and AP diameter — is essential for managing endometrial cancer, fibroids, and endometriosis, yet is performed manually with high inter-observer variability. No prior automated 3D approach existed for multi-landmark localization." },
-              { icon: FlaskConical, title: "Approach",          body: "Proposed a segmentation-guided multi-decoder 3D U-Net predicting six uterine landmarks simultaneously. Introduced SharpHeatmapLoss — a custom loss combining MSE with a cubic penalty term that forces sharply peaked heatmaps — and ROI-guided inference using uterine segmentation masks to eliminate background noise." },
-              { icon: BarChart3,    title: "Results",           body: "Achieved 4.52 mm overall mean error across 192 landmarks and 32 test cases from 3 acquisition protocols. Cavity Cervix and Cavity Fundus reached sub-3 mm precision. Enables reproducible uterine biometry at scale, reducing inter-reader variability in fibroid monitoring and endometriosis staging." },
+              { icon: FlaskConical, title: "Approach",          body: "Built the preprocessing pipeline used across the entire project, handling raw MRI data from three different scanner protocols. Using an nnU-Net v2 uterine segmentation as a region of interest, trained a multi-decoder 3D U-Net with a shared encoder and independent decoder branches for each landmark group, predicting six uterine landmarks simultaneously. Introduced SharpHeatmapLoss — a custom loss combining MSE with a cubic penalty term that forces sharply peaked heatmaps — and ROI-guided inference using uterine segmentation masks to eliminate background noise." },
+              { icon: BarChart3,    title: "Results",           body: "Achieved 4.52 mm overall mean error across 192 landmarks and 32 test cases from 3 acquisition protocols. Cavity Cervix and Cavity Fundus reached sub-3 mm precision. Landmark detection contributed directly to a real-time reporting pipeline achieving end-to-end results in under 60 seconds, submitted to IEEE Transactions on Medical Imaging." },
             ].map((s, i) => <NarrativeItem key={s.title} {...s} delay={i * 0.08} />)}
             <StackChips stack={["Python", "PyTorch", "3D U-Net", "SharpHeatmapLoss", "NIfTI", "nibabel", "SciPy", "3D Slicer"]} />
           </div>

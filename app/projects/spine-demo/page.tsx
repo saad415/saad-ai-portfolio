@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Upload, Brain, FileJson, ShieldAlert, Loader2 } from "lucide-react";
 import NiftiViewer from "@/components/NiftiViewer";
 import Navbar from "@/components/Navbar";
-import SpineOverview from "@/components/SpineOverview";
 
 const SAMPLE_CASES = [
   {
@@ -334,17 +333,6 @@ export default function SpineDemoPage() {
               </div>
             )}
 
-            {predictionResult && (
-              <div className="mt-6 rounded-2xl border border-green-400/20 bg-black/50 p-4">
-                <h3 className="mb-3 font-semibold text-green-400">
-                  Backend Response
-                </h3>
-
-                <pre className="overflow-auto text-xs text-gray-300">
-                  {JSON.stringify(predictionResult, null, 2)}
-                </pre>
-              </div>
-            )}
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-8">
@@ -360,7 +348,6 @@ export default function SpineDemoPage() {
         </div>
       </section>
 
-      <SpineOverview />
     </main>
   );
 }
