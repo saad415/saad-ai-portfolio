@@ -83,7 +83,7 @@ export default function UterusDemoPage() {
   };
 
   return (
-    <main className="min-h-screen bg-black px-6 py-24 text-white">
+    <main className="min-h-screen bg-transparent px-6 py-24 text-white">
       <Navbar />
 
       <section className="mx-auto max-w-6xl">

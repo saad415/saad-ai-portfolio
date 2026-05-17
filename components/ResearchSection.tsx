@@ -8,7 +8,7 @@ import UterusShowcase from "./UterusShowcase";
 /* ── shared sub-components ── */
 
 const SectionTag = ({ children }: { children: React.ReactNode }) => (
-  <p className="mb-3 text-xs uppercase tracking-[0.3em] text-green-400">{children}</p>
+  <p className="mb-3 text-xs uppercase tracking-[0.3em] text-teal-300">{children}</p>
 );
 
 const MetricCard = ({
@@ -19,9 +19,9 @@ const MetricCard = ({
     whileInView={{ y: 0 }}
     viewport={{ once: true, amount: 0.1 }}
     transition={{ delay }}
-    className="rounded-2xl border border-white/10 bg-white/[0.03] p-6"
+    className="rounded-2xl border border-white/[0.08] bg-[#0b1014]/65 p-6"
   >
-    <p style={{ fontSize: "clamp(1.2rem, 2vw, 2.2rem)" }} className="font-bold text-green-400">{value}</p>
+    <p style={{ fontSize: "clamp(1.2rem, 2vw, 2.2rem)" }} className="font-bold text-teal-300">{value}</p>
     <p style={{ fontSize: "clamp(0.85rem, 1vw, 1.05rem)" }} className="mt-1 font-medium text-white">{label}</p>
     <p style={{ fontSize: "clamp(0.75rem, 0.85vw, 0.9rem)" }} className="mt-0.5 text-zinc-500">{sub}</p>
   </motion.div>
@@ -37,8 +37,8 @@ const NarrativeItem = ({
     transition={{ delay, duration: 0.5 }}
     className="flex gap-5"
   >
-    <span className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]">
-      <Icon size={18} className="text-green-400" />
+    <span className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.035]">
+      <Icon size={18} className="text-teal-300" />
     </span>
     <div>
       <h4 style={{ fontSize: "clamp(1.05rem, 1.3vw, 1.4rem)" }} className="font-semibold text-white">{title}</h4>
@@ -50,7 +50,7 @@ const NarrativeItem = ({
 const StackChips = ({ stack }: { stack: string[] }) => (
   <div className="flex flex-wrap gap-2 pt-2">
     {stack.map((t) => (
-      <span key={t} className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-400">{t}</span>
+      <span key={t} className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-sm text-zinc-400">{t}</span>
     ))}
   </div>
 );
@@ -63,8 +63,8 @@ const JANA_HUTTER_SCHOLAR_URL =
 export default function ResearchSection() {
   return (
     <section id="research" className="relative w-full px-[5vw] py-28">
-      <div className="pointer-events-none absolute right-0 top-1/4 h-96 w-96 translate-x-1/3 rounded-full bg-green-400/5 blur-[100px]" />
-      <div className="pointer-events-none absolute left-0 bottom-1/4 h-80 w-80 -translate-x-1/3 rounded-full bg-green-400/4 blur-[90px]" />
+      <div className="pointer-events-none absolute right-0 top-1/4 h-96 w-96 translate-x-1/3 rounded-full bg-teal-300/6 blur-[100px]" />
+      <div className="pointer-events-none absolute left-0 bottom-1/4 h-80 w-80 -translate-x-1/3 rounded-full bg-emerald-300/5 blur-[90px]" />
 
       {/* ── Section heading ── */}
       <motion.div
@@ -87,7 +87,7 @@ export default function ResearchSection() {
             href={JANA_HUTTER_SCHOLAR_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-zinc-400 transition hover:text-green-400"
+            className="inline-flex items-center gap-1 text-zinc-400 transition hover:text-teal-300"
           >
             Prof. Dr. Jana Hutter <ArrowUpRight size={13} />
           </a>
@@ -114,13 +114,13 @@ export default function ResearchSection() {
           <div className="mt-5 flex flex-wrap gap-3">
             <a
               href="/thesis/spine"
-              className="inline-flex items-center gap-2 rounded-full bg-green-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-green-300"
+              className="inline-flex items-center gap-2 rounded-full bg-teal-300 px-5 py-2.5 text-sm font-semibold text-[#04100f] transition hover:bg-teal-200"
             >
               <BookOpen size={15} /> Imeplentation Details
             </a>
             <a
               href="/projects/spine-demo"
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-green-400 hover:text-green-400"
+              className="inline-flex items-center gap-2 rounded-full border border-white/[0.12] bg-white/[0.02] px-5 py-2.5 text-sm font-semibold text-white transition hover:border-teal-300/60 hover:bg-teal-300/10 hover:text-teal-200"
             >
               Live demo <ArrowUpRight size={15} />
             </a>
@@ -187,7 +187,7 @@ export default function ResearchSection() {
           <div className="mt-5 flex flex-wrap gap-3">
             <a
               href="/thesis/uterus"
-              className="inline-flex items-center gap-2 rounded-full bg-green-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-green-300"
+              className="inline-flex items-center gap-2 rounded-full bg-teal-300 px-5 py-2.5 text-sm font-semibold text-[#04100f] transition hover:bg-teal-200"
             >
               <BookOpen size={15} /> Imeplentation Details
             </a>

@@ -12,7 +12,7 @@ const MetricCard = ({ value, label, sub }: { value: string; label: string; sub: 
 
 export default function UterusThesisPage() {
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-transparent text-white">
       <Navbar />
 
       {/* Hero */}

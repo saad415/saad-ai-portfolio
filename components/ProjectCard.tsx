@@ -15,15 +15,15 @@ type ProjectCardProps = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  "Data Engineering": "text-orange-400",
-  "AI/ML":            "text-green-400",
-  "Full Stack":       "text-green-400",
-  "Research":         "text-green-400",
+  "Data Engineering": "text-amber-300",
+  "AI/ML":            "text-teal-300",
+  "Full Stack":       "text-teal-300",
+  "Research":         "text-teal-300",
 };
 
 const GLOW_COLORS: Record<string, string> = {
-  "Data Engineering": "radial-gradient(600px circle at 50% 0%, rgba(251,146,60,0.08), transparent 60%)",
-  default:            "radial-gradient(600px circle at 50% 0%, rgba(74,222,128,0.08), transparent 60%)",
+  "Data Engineering": "radial-gradient(600px circle at 50% 0%, rgba(252,211,77,0.08), transparent 60%)",
+  default:            "radial-gradient(600px circle at 50% 0%, rgba(45,212,191,0.09), transparent 60%)",
 };
 
 export default function ProjectCard({
@@ -35,7 +35,7 @@ export default function ProjectCard({
   href,
   pipeline,
 }: ProjectCardProps) {
-  const categoryColor = CATEGORY_COLORS[categoryTag] ?? "text-green-400";
+  const categoryColor = CATEGORY_COLORS[categoryTag] ?? "text-teal-300";
   const glowBg = GLOW_COLORS[categoryTag] ?? GLOW_COLORS.default;
 
   return (
@@ -46,7 +46,7 @@ export default function ProjectCard({
     >
       <Link
         href={href}
-        className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-8"
+        className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0b1014]/75 p-8 shadow-xl shadow-black/10 transition-colors hover:border-teal-300/20"
       >
         {/* Hover glow */}
         <div
@@ -83,7 +83,7 @@ export default function ProjectCard({
           <div className="relative z-10 mt-5 flex flex-wrap items-center gap-1.5">
             {pipeline.map((step, i) => (
               <span key={step} className="flex items-center gap-1.5">
-                <span className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-zinc-400">
+                <span className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-xs text-zinc-400">
                   {step}
                 </span>
                 {i < pipeline.length - 1 && (
@@ -99,7 +99,7 @@ export default function ProjectCard({
           {tech.map((item) => (
             <span
               key={item}
-              className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-zinc-400"
+              className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-sm text-zinc-400"
             >
               {item}
             </span>

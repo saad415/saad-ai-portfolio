@@ -49,12 +49,12 @@ const projects: Project[] = [
 ];
 
 const Divider = () => (
-  <div className="h-px w-full bg-white/10" />
+  <div className="h-px w-full bg-white/[0.07]" />
 );
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-transparent text-white">
       <Navbar />
 
       {/* 1. Hero */}

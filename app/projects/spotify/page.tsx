@@ -31,7 +31,7 @@ const MetricCard = ({
 
 export default function SpotifyProjectPage() {
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-transparent text-white">
       <Navbar />
 
       {/* Hero */}

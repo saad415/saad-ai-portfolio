@@ -35,7 +35,7 @@ const MetricCard = ({
 
 export default function StoreSalesExcelProjectPage() {
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-transparent text-white">
       <Navbar />
 
       <section className="mx-auto max-w-5xl px-6 pt-32 pb-16">
