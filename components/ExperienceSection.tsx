@@ -15,36 +15,36 @@ type Experience = {
 // ── Replace with your real experience ──
 const experiences: Experience[] = [
   {
-    company: "Your Company",
-    role: "AI / ML Engineer",
-    period: "Jan 2024 – Present",
+    company: "Smart Imaging Lab, Universitatsklinikum Erlangen",
+    role: "Research Assistant (Master's Thesis)",
+    period: "09/2025 - 03/2026",
+    location: "Erlangen, Germany",
+    bullets: [
+      "Designed a 3D dual-decoder U-Net for automatic lumbosacral vertebral landmark localization in pelvic MRI, achieving 4.21 mm mean localization error across multi-center datasets.",
+      "Developed dual- and triple-decoder 3D U-Net architectures for uterine landmark detection, achieving 4.52 mm mean landmark error across three MRI acquisition protocols.",
+      "Validated deep learning models on multi-center, multi-vendor pelvic MRI datasets (0.55T-3T) across heterogeneous clinical imaging protocols.",
+    ],
+  },
+  {
+    company: "Sofitsians",
+    role: "AI Engineer",
+    period: "04/2024 - 02/2025",
     location: "Remote",
-    current: true,
     bullets: [
-      "Developed and deployed a 3D U-Net pipeline for vertebral landmark detection, serving live predictions via FastAPI.",
-      "Reduced inference latency by 40% through model quantisation and async batching.",
-      "Built end-to-end CI/CD pipeline with GitHub Actions and Docker for zero-downtime model updates.",
+      "Developed AI-powered applications using LLMs, OpenAI APIs, and React.js for intelligent user experiences.",
+      "Built and integrated RESTful APIs, RAG pipelines, and semantic search systems for AI-driven solutions.",
+      "Implemented AI workflow automation with prompt engineering, model integration, and frontend components to streamline user interactions.",
     ],
   },
   {
-    company: "Previous Company",
-    role: "Full-Stack Developer",
-    period: "Jun 2022 – Dec 2023",
-    location: "On-site",
+    company: "Sofitsians",
+    role: "Android Developer",
+    period: "11/2019 - 01/2021",
+    location: "Islamabad, Pakistan - On-site",
     bullets: [
-      "Architected and shipped React/Next.js web applications serving 10k+ monthly active users.",
-      "Designed RESTful APIs with FastAPI and PostgreSQL; implemented JWT auth and role-based access.",
-      "Mentored junior developers and led weekly code-review sessions.",
-    ],
-  },
-  {
-    company: "Research Lab / University",
-    role: "Research Assistant — Medical Imaging",
-    period: "Sep 2021 – May 2022",
-    location: "University",
-    bullets: [
-      "Annotated and pre-processed 400+ sacral MRI volumes for deep learning dataset construction.",
-      "Implemented baseline atlas-based landmark detection methods for benchmark comparison.",
+      "Developed native Android applications using Java, following MVVM architecture and integrating with RESTful APIs and SQLite databases.",
+      "Constructed scalable UI components using XML layouts following Material Design guidelines. Used Retrofit for API integration and SQLite for local database storage, improving app stability and data management.",
+      "Managed version control using Git and participated in code reviews, ensuring clean architecture and efficient collaboration across the development team.",
     ],
   },
 ];
