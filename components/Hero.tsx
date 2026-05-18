@@ -28,7 +28,7 @@ export default function Hero() {
             </span>
             <span className="flex items-center gap-1.5 text-xs text-zinc-500">
               <MapPin size={11} />
-              Remote / Worldwide
+              Germany / Europe
             </span>
           </div>
 
