@@ -16,6 +16,9 @@ export const metadata: Metadata = {
   title: "Saad Ahmad — AI Systems Engineer",
   description:
     "AI systems engineer building medical imaging, deep learning, and full-stack inference applications.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
