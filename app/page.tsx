@@ -3,6 +3,8 @@ import Navbar            from "@/components/Navbar";
 import ResearchSection   from "@/components/ResearchSection";
 import ExperienceSection from "@/components/ExperienceSection";
 import ProjectsSection   from "@/components/ProjectsSection";
+import SkillsSection     from "@/components/SkillsSection";
+import PublicationsSection from "@/components/PublicationsSection";
 import type { Project }  from "@/components/ProjectsSection";
 
 // ── Add your real projects here ──
@@ -71,8 +73,18 @@ export default function Home() {
 
       <Divider />
 
-      {/* 4. Projects */}
+      {/* 4. Publications */}
+      <PublicationsSection />
+
+      <Divider />
+
+      {/* 5. Projects */}
       <ProjectsSection projects={projects} />
+
+      <Divider />
+
+      {/* 6. Skills */}
+      <SkillsSection />
     </main>
   );
 }
