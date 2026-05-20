@@ -5,6 +5,7 @@ import ExperienceSection from "@/components/ExperienceSection";
 import ProjectsSection   from "@/components/ProjectsSection";
 import SkillsSection     from "@/components/SkillsSection";
 import PublicationsSection from "@/components/PublicationsSection";
+import ContactSection    from "@/components/ContactSection";
 import type { Project }  from "@/components/ProjectsSection";
 
 // ── Add your real projects here ──
@@ -85,6 +86,11 @@ export default function Home() {
 
       {/* 6. Skills */}
       <SkillsSection />
+
+      <Divider />
+
+      {/* 7. Contact */}
+      <ContactSection />
     </main>
   );
 }
