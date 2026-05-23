@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ExternalLink, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
-import { ApplicationDeadlineInput, ApplicationPrioritySelect, ApplicationStatusSelect } from "@/components/ApplicationQuickFields";
+import { ApplicationDeadlineInput, ApplicationPrioritySelect, ApplicationStatusSelect, ApplicationSubmitTodayToggle } from "@/components/ApplicationQuickFields";
 import ApplicationEditModal from "@/components/ApplicationEditModal";
 import { ApplicationRow } from "@/lib/tracker-db";
 
@@ -34,7 +34,7 @@ function sortApplications(
 ): ApplicationRow[] {
   if (!field) return apps;
 
-  return [...apps].sort((a, b) => {
+  return sortTodayFirst([...apps]).sort((a, b) => {
     let cmp = 0;
 
     if (field === "status") {
@@ -52,7 +52,11 @@ function sortApplications(
   });
 }
 
-function SortIcon({ field, active, dir }: { field: string; active: boolean; dir: SortDir }) {
+function sortTodayFirst(apps: ApplicationRow[]) {
+  return [...apps].sort((a, b) => Number(b.submit_today) - Number(a.submit_today));
+}
+
+function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
   if (!active) return <ChevronsUpDown size={13} className="ml-1 inline opacity-30" />;
   return dir === "asc"
     ? <ChevronUp size={13} className="ml-1 inline text-teal-300" />
@@ -77,7 +81,9 @@ export default function ApplicationsTable({ applications }: { applications: Appl
     }
   }
 
-  const sorted = sortApplications(applications, sortField, sortDir);
+  const sorted = sortField
+    ? sortApplications(applications, sortField, sortDir)
+    : sortTodayFirst(applications);
 
   if (!applications.length) {
     return (
@@ -103,26 +109,27 @@ export default function ApplicationsTable({ applications }: { applications: Appl
             <tr>
               <th className="px-5 py-4">Organization</th>
               <th className="px-5 py-4">Title</th>
+              <th className="px-5 py-4">Today</th>
               <th
                 className="cursor-pointer select-none px-5 py-4 transition-colors hover:text-zinc-300"
                 onClick={() => handleSort("status")}
               >
                 Status
-                <SortIcon field="status" active={sortField === "status"} dir={sortDir} />
+                <SortIcon active={sortField === "status"} dir={sortDir} />
               </th>
               <th
                 className="cursor-pointer select-none px-5 py-4 transition-colors hover:text-zinc-300"
                 onClick={() => handleSort("deadline")}
               >
                 Deadline
-                <SortIcon field="deadline" active={sortField === "deadline"} dir={sortDir} />
+                <SortIcon active={sortField === "deadline"} dir={sortDir} />
               </th>
               <th
                 className="cursor-pointer select-none px-5 py-4 transition-colors hover:text-zinc-300"
                 onClick={() => handleSort("priority")}
               >
                 Priority
-                <SortIcon field="priority" active={sortField === "priority"} dir={sortDir} />
+                <SortIcon active={sortField === "priority"} dir={sortDir} />
               </th>
               <th className="px-5 py-4">Link</th>
               <th className="px-5 py-4">Edit</th>
@@ -141,9 +148,18 @@ export default function ApplicationsTable({ applications }: { applications: Appl
 
 function ApplicationTableRow({ application }: { application: ApplicationRow }) {
   return (
-    <tr className="border-b border-white/[0.06] align-top last:border-0">
+    <tr className={`border-b align-top last:border-0 ${
+      application.submit_today
+        ? "border-amber-300/20 bg-amber-300/[0.055]"
+        : "border-white/[0.06]"
+    }`}>
       <td className="px-5 py-4 font-medium text-white">
         {application.organization}
+        {application.submit_today && (
+          <p className="mt-2 inline-flex rounded-full border border-amber-300/40 bg-amber-300/10 px-2 py-0.5 text-[11px] font-semibold text-amber-100">
+            Submit today
+          </p>
+        )}
         <p className="mt-1 text-xs font-normal capitalize text-zinc-500">{application.type}</p>
       </td>
       <td className="px-5 py-4 text-zinc-300">
@@ -153,6 +169,9 @@ function ApplicationTableRow({ application }: { application: ApplicationRow }) {
             {[application.city, application.country].filter(Boolean).join(", ")}
           </p>
         )}
+      </td>
+      <td className="px-5 py-4">
+        <ApplicationSubmitTodayToggle id={application.id} submitToday={application.submit_today} />
       </td>
       <td className="px-5 py-4">
         <ApplicationStatusSelect id={application.id} status={application.status} />

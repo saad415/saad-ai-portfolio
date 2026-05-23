@@ -5,6 +5,7 @@ import {
   updateApplicationDeadlineAction,
   updateApplicationPriorityAction,
   updateApplicationStatusAction,
+  updateApplicationSubmitTodayAction,
 } from "@/app/tracker/actions";
 
 const statuses = [
@@ -123,6 +124,28 @@ export function ApplicationPrioritySelect({
   );
 }
 
+export function ApplicationSubmitTodayToggle({
+  id,
+  submitToday,
+}: {
+  id: number;
+  submitToday: boolean;
+}) {
+  return (
+    <form action={updateApplicationSubmitTodayAction}>
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="submit_today" value={submitToday ? "false" : "true"} />
+      <button
+        type="submit"
+        className={submitToday ? submitTodayActiveClass : submitTodayIdleClass}
+        aria-pressed={submitToday}
+      >
+        Today
+      </button>
+    </form>
+  );
+}
+
 const statusSummaryClass =
   "block w-44 cursor-pointer list-none rounded-full border border-teal-300/20 bg-teal-300/10 px-4 py-2 text-xs font-medium text-teal-100 outline-none transition marker:hidden focus:border-teal-300/70 group-open:border-teal-300/70 [&::-webkit-details-marker]:hidden";
 
@@ -131,3 +154,9 @@ const compactDateClass =
 
 const prioritySummaryClass =
   "block w-32 cursor-pointer list-none rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-2 text-xs font-medium text-zinc-200 outline-none transition marker:hidden focus:border-teal-300/70 group-open:border-teal-300/70 [&::-webkit-details-marker]:hidden";
+
+const submitTodayIdleClass =
+  "rounded-full border border-white/[0.1] bg-white/[0.02] px-4 py-2 text-xs font-semibold text-zinc-300 transition hover:border-amber-300/50 hover:bg-amber-300/10 hover:text-amber-100";
+
+const submitTodayActiveClass =
+  "rounded-full border border-amber-300/50 bg-amber-300/15 px-4 py-2 text-xs font-semibold text-amber-100 shadow-[0_0_20px_rgba(252,211,77,0.12)] transition hover:bg-amber-300/20";

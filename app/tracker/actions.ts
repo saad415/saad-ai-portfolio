@@ -17,6 +17,7 @@ import {
   updateApplicationDeadline,
   updateApplicationPriority,
   updateApplicationStatus,
+  updateApplicationSubmitToday,
   updateOpportunityStatus,
   ApplicationStatus,
   OpportunityStatus,
@@ -160,6 +161,20 @@ export async function updateApplicationPriorityAction(formData: FormData) {
   }
 
   await updateApplicationPriority(id, priority);
+  revalidatePath("/tracker");
+}
+
+export async function updateApplicationSubmitTodayAction(formData: FormData) {
+  await requireTrackerAccess();
+
+  const id = Number(formData.get("id"));
+  const submitToday = formData.get("submit_today") === "true";
+
+  if (!Number.isInteger(id)) {
+    throw new Error("Invalid application id.");
+  }
+
+  await updateApplicationSubmitToday(id, submitToday);
   revalidatePath("/tracker");
 }
 

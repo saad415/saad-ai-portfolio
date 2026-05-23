@@ -23,6 +23,7 @@ export type ApplicationRow = {
   date_applied: string | null;
   status: ApplicationStatus;
   priority: string;
+  submit_today: boolean;
   contact_name: string | null;
   contact_email: string | null;
   notes: string | null;
@@ -88,12 +89,18 @@ export async function ensureApplicationsTable() {
       date_applied DATE,
       status TEXT NOT NULL DEFAULT 'Not Applied',
       priority TEXT NOT NULL DEFAULT 'Medium',
+      submit_today BOOLEAN NOT NULL DEFAULT FALSE,
       contact_name TEXT,
       contact_email TEXT,
       notes TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+  `;
+
+  await sql`
+    ALTER TABLE applications
+    ADD COLUMN IF NOT EXISTS submit_today BOOLEAN NOT NULL DEFAULT FALSE;
   `;
 }
 
@@ -143,6 +150,7 @@ export async function listApplications(): Promise<ApplicationRow[]> {
       date_applied::text,
       status,
       priority,
+      submit_today,
       contact_name,
       contact_email,
       notes,
@@ -404,6 +412,20 @@ export async function updateApplication(id: number, formData: FormData) {
       contact_email = ${nullableString(formData.get("contact_email"))},
       notes = ${nullableString(formData.get("notes"))},
       updated_at = NOW()
+    WHERE id = ${id};
+  `;
+}
+
+export async function updateApplicationSubmitToday(id: number, submitToday: boolean) {
+  if (!sql) {
+    throw new Error("DATABASE_URL is not configured.");
+  }
+
+  await ensureApplicationsTable();
+
+  await sql`
+    UPDATE applications
+    SET submit_today = ${submitToday}, updated_at = NOW()
     WHERE id = ${id};
   `;
 }
