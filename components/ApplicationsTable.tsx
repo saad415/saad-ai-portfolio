@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ExternalLink, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ExternalLink, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { ApplicationDeadlineInput, ApplicationPrioritySelect, ApplicationStatusSelect, ApplicationSubmitTodayToggle } from "@/components/ApplicationQuickFields";
 import ApplicationEditModal from "@/components/ApplicationEditModal";
 import { ApplicationRow } from "@/lib/tracker-db";
@@ -26,6 +26,8 @@ const PRIORITY_ORDER: Record<string, number> = {
   Medium: 1,
   Low:    2,
 };
+
+const applicationsPerPage = 10;
 
 function sortApplications(
   apps: ApplicationRow[],
@@ -66,6 +68,7 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
 export default function ApplicationsTable({ applications }: { applications: ApplicationRow[] }) {
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [currentPage, setCurrentPage] = useState(1);
 
   function handleSort(field: SortField) {
     if (sortField === field) {
@@ -79,11 +82,19 @@ export default function ApplicationsTable({ applications }: { applications: Appl
       setSortField(field);
       setSortDir("asc");
     }
+
+    setCurrentPage(1);
   }
 
   const sorted = sortField
     ? sortApplications(applications, sortField, sortDir)
     : sortTodayFirst(applications);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / applicationsPerPage));
+  const page = Math.min(currentPage, totalPages);
+  const visibleApplications = useMemo(() => {
+    const start = (page - 1) * applicationsPerPage;
+    return sorted.slice(start, start + applicationsPerPage);
+  }, [sorted, page]);
 
   if (!applications.length) {
     return (
@@ -136,11 +147,41 @@ export default function ApplicationsTable({ applications }: { applications: Appl
             </tr>
           </thead>
           <tbody>
-            {sorted.map((application) => (
+            {visibleApplications.map((application) => (
               <ApplicationTableRow key={application.id} application={application} />
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-white/[0.08] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-zinc-500">
+          Showing {(page - 1) * applicationsPerPage + 1}-{Math.min(page * applicationsPerPage, sorted.length)} of{" "}
+          {sorted.length}
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setCurrentPage((value) => Math.max(1, value - 1))}
+            disabled={page === 1}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.12] text-zinc-300 transition hover:border-teal-300/60 hover:text-teal-200 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Previous applications page"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <span className="min-w-24 text-center text-sm text-zinc-400">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setCurrentPage((value) => Math.min(totalPages, value + 1))}
+            disabled={page === totalPages}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.12] text-zinc-300 transition hover:border-teal-300/60 hover:text-teal-200 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Next applications page"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );
