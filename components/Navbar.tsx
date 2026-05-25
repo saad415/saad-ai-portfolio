@@ -13,6 +13,7 @@ export default function Navbar() {
           <Link href="/#experience" className="transition hover:text-teal-300">Experience</Link>
           <Link href="/#publications" className="transition hover:text-teal-300">Publications</Link>
           <Link href="/#projects" className="transition hover:text-teal-300">Projects</Link>
+          <Link href="/ask" className="transition hover:text-teal-300">Ask AI</Link>
           <Link href="/#skills" className="transition hover:text-teal-300">Skills</Link>
           <Link href="/#contact" className="transition hover:text-teal-300">Contact</Link>
         </div>
