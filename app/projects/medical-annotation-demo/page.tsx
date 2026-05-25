@@ -1,7 +1,10 @@
 "use client";
 
+const API_BASE = process.env.NEXT_PUBLIC_ANNOTATION_API_URL ?? "http://localhost:8000";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentType, ReactNode } from "react";
+import { gzipSync } from "fflate";
 import * as nifti from "nifti-reader-js";
 import {
   Brain,
@@ -21,7 +24,8 @@ import Navbar from "@/components/Navbar";
 type Plane = "axial" | "coronal" | "sagittal";
 type Label = "lesion" | "organ" | "exclude";
 type Status = "unreviewed" | "in-progress" | "complete";
-type ToolMode = "paint" | "select" | "move";
+type ToolMode = "paint" | "erase" | "select" | "move";
+type WorkflowMode = "landmarks" | "segmentation";
 
 type AnnotationPoint = {
   id: string;
@@ -37,9 +41,22 @@ type AnnotationPoint = {
   tool: "brush" | "region-grow";
 };
 
+type SegmentationStroke = {
+  id: string;
+  caseId: string;
+  label: Label;
+  plane: Plane;
+  slice: number;
+  x: number;
+  y: number;
+  radius: number;
+  source: "brush" | "region-grow";
+};
+
 type VolumeInfo = {
   data: Float32Array;
   dims: [number, number, number];
+  pixDims: number[];
   affine: number[][];
   fileName: string;
 };
@@ -62,8 +79,10 @@ export default function MedicalAnnotationDemoPage() {
   const [activePlane, setActivePlane] = useState<Plane>("axial");
   const [slice, setSlice] = useState(48);
   const [label, setLabel] = useState<Label>("lesion");
+  const [workflowMode, setWorkflowMode] = useState<WorkflowMode>("landmarks");
   const [toolMode, setToolMode] = useState<ToolMode>("paint");
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+  const [selectedSegmentationId, setSelectedSegmentationId] = useState<string | null>(null);
   const [brushRadius, setBrushRadius] = useState(9);
   const [status, setStatus] = useState<Status>("in-progress");
   const [notes, setNotes] = useState("Review posterior boundary before export.");
@@ -72,13 +91,16 @@ export default function MedicalAnnotationDemoPage() {
     { id: "seed-2", caseId: "mri-042", label: "lesion", plane: "axial", slice: 48, x: 61, y: 44, radius: 8, tool: "region-grow" },
     { id: "seed-3", caseId: "mri-042", label: "organ", plane: "coronal", slice: 48, x: 50, y: 52, radius: 13, tool: "brush" },
   ]);
-  const [saveState, setSaveState] = useState<"idle" | "saved" | "loaded">("idle");
+  const [segmentations, setSegmentations] = useState<SegmentationStroke[]>([]);
+  const [segmentationOpacity, setSegmentationOpacity] = useState(0.42);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "loading" | "loaded" | "error">("idle");
   const [volumeInfo, setVolumeInfo] = useState<VolumeInfo | null>(null);
   const [loadError, setLoadError] = useState("");
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const [movingAnnotationId, setMovingAnnotationId] = useState<string | null>(null);
+  const [movingSegmentationId, setMovingSegmentationId] = useState<string | null>(null);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const dragOrigin = useRef({ mx: 0, my: 0, px: 0, py: 0 });
 
@@ -88,8 +110,13 @@ export default function MedicalAnnotationDemoPage() {
   const visibleAnnotations = annotations.filter(
     (point) => point.caseId === activeCaseId && point.plane === activePlane && Math.abs(point.slice - activeSlice) <= 2,
   );
+  const visibleSegmentation = segmentations.filter(
+    (stroke) => stroke.caseId === activeCaseId && stroke.plane === activePlane && stroke.slice === activeSlice,
+  );
   const caseAnnotations = annotations.filter((point) => point.caseId === activeCaseId);
+  const caseSegmentations = segmentations.filter((stroke) => stroke.caseId === activeCaseId);
   const selectedAnnotation = annotations.find((point) => point.id === selectedAnnotationId) ?? null;
+  const selectedSegmentation = segmentations.find((stroke) => stroke.id === selectedSegmentationId) ?? null;
   const exportPayload = useMemo(() => ({
     caseId: activeCaseId,
     modality: "Uploaded NIfTI MRI",
@@ -98,14 +125,20 @@ export default function MedicalAnnotationDemoPage() {
     status,
     notes,
     annotationCount: caseAnnotations.length,
+    segmentationStrokeCount: caseSegmentations.length,
     labels: summarizeLabels(caseAnnotations),
+    segmentationLabels: summarizeSegmentation(caseSegmentations),
     annotations: caseAnnotations,
+    segmentation: {
+      representation: "brush-stroke mask overlay",
+      strokes: caseSegmentations,
+    },
     backendContract: {
       save: "POST /annotations/:caseId",
       load: "GET /annotations/:caseId",
       export: "GET /annotations/:caseId/export",
     },
-  }), [activeCaseId, caseAnnotations, notes, status, volumeInfo]);
+  }), [activeCaseId, caseAnnotations, caseSegmentations, notes, status, volumeInfo]);
 
   useEffect(() => {
     if (!volumeInfo || !canvasRef.current) return;
@@ -142,6 +175,14 @@ export default function MedicalAnnotationDemoPage() {
       setNotes(`Uploaded ${file.name}. Annotate relevant slices and export ML-ready JSON.`);
       setSaveState("idle");
       resetViewport();
+
+      // Upload to Vercel Blob via backend (non-blocking — best effort)
+      const caseId = `uploaded-${file.name}`;
+      const form = new FormData();
+      form.append("file", file);
+      fetch(`${API_BASE}/api/annotations/${caseId}/volume`, { method: "POST", body: form }).catch(() => {
+        // Blob upload failure is non-fatal; local rendering still works
+      });
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Could not load this NIfTI file.");
     }
@@ -165,18 +206,60 @@ export default function MedicalAnnotationDemoPage() {
     setSaveState("idle");
   }
 
+  function addSegmentationStroke(x: number, y: number, source: SegmentationStroke["source"] = "brush") {
+    setSegmentations((current) => [
+      ...current,
+      {
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        caseId: activeCaseId,
+        label,
+        plane: activePlane,
+        slice: activeSlice,
+        x,
+        y,
+        radius: source === "region-grow" ? brushRadius + 11 : brushRadius,
+        source,
+      },
+    ]);
+    setSaveState("idle");
+  }
+
   function handleViewportClick(event: React.MouseEvent<HTMLButtonElement>) {
     if (dragging) return;
-    if (toolMode !== "paint") return;
+    if (workflowMode === "landmarks" && toolMode !== "paint") return;
     const point = eventToImagePoint(event);
 
     if (!point) return;
+    if (workflowMode === "segmentation") {
+      if (toolMode === "select") {
+        setSelectedSegmentationId(findNearestSegmentationStroke(point.x, point.y)?.id ?? null);
+        return;
+      }
+
+      if (toolMode === "erase") {
+        eraseSegmentationAt(point.x, point.y);
+        return;
+      }
+
+      if (toolMode === "move") return;
+
+      addSegmentationStroke(Math.round(point.x), Math.round(point.y));
+      return;
+    }
+
     addBrushPoint(Math.round(point.x), Math.round(point.y));
   }
 
   function startDrag(event: React.MouseEvent<HTMLButtonElement>) {
-    if (toolMode === "move" && selectedAnnotation) {
+    if (toolMode === "paint" || toolMode === "erase" || toolMode === "select") return;
+
+    if (workflowMode === "landmarks" && toolMode === "move" && selectedAnnotation) {
       setMovingAnnotationId(selectedAnnotation.id);
+      return;
+    }
+
+    if (workflowMode === "segmentation" && toolMode === "move" && selectedSegmentation) {
+      setMovingSegmentationId(selectedSegmentation.id);
       return;
     }
 
@@ -193,6 +276,13 @@ export default function MedicalAnnotationDemoPage() {
       return;
     }
 
+    if (movingSegmentationId) {
+      const point = eventToImagePoint(event);
+      if (!point) return;
+      updateSegmentationStroke(movingSegmentationId, { x: Math.round(point.x), y: Math.round(point.y), slice: activeSlice });
+      return;
+    }
+
     if (!dragging) return;
     const { mx, my, px, py } = dragOrigin.current;
     setPan({ x: px + event.clientX - mx, y: py + event.clientY - my });
@@ -201,6 +291,7 @@ export default function MedicalAnnotationDemoPage() {
   function stopDrag() {
     setDragging(false);
     setMovingAnnotationId(null);
+    setMovingSegmentationId(null);
   }
 
   function eventToImagePoint(event: React.MouseEvent<HTMLButtonElement>) {
@@ -224,6 +315,33 @@ export default function MedicalAnnotationDemoPage() {
     setSaveState("idle");
   }
 
+  function updateSegmentationStroke(id: string, patch: Partial<SegmentationStroke>) {
+    setSegmentations((current) => current.map((stroke) => stroke.id === id ? { ...stroke, ...patch } : stroke));
+    setSaveState("idle");
+  }
+
+  function findNearestSegmentationStroke(x: number, y: number) {
+    return visibleSegmentation
+      .map((stroke) => ({
+        stroke,
+        distance: Math.hypot(stroke.x - x, stroke.y - y),
+      }))
+      .filter(({ stroke, distance }) => distance <= Math.max(6, stroke.radius * 0.9))
+      .sort((a, b) => a.distance - b.distance)[0]?.stroke ?? null;
+  }
+
+  function eraseSegmentationAt(x: number, y: number) {
+    setSegmentations((current) => current.filter((stroke) => {
+      if (stroke.caseId !== activeCaseId || stroke.plane !== activePlane || stroke.slice !== activeSlice) return true;
+      const distance = Math.hypot(stroke.x - x, stroke.y - y);
+      return distance > Math.max(brushRadius, stroke.radius * 0.75);
+    }));
+    if (selectedSegmentation && Math.hypot(selectedSegmentation.x - x, selectedSegmentation.y - y) <= brushRadius) {
+      setSelectedSegmentationId(null);
+    }
+    setSaveState("idle");
+  }
+
   function deleteSelectedAnnotation() {
     if (!selectedAnnotationId) return;
     setAnnotations((current) => current.filter((point) => point.id !== selectedAnnotationId));
@@ -236,6 +354,13 @@ export default function MedicalAnnotationDemoPage() {
     setPan({ x: 0, y: 0 });
   }
 
+  function deleteSelectedSegmentationStroke() {
+    if (!selectedSegmentationId) return;
+    setSegmentations((current) => current.filter((stroke) => stroke.id !== selectedSegmentationId));
+    setSelectedSegmentationId(null);
+    setSaveState("idle");
+  }
+
   function handleZoomChange(value: number) {
     setZoom(value);
     if (value === 1) {
@@ -246,6 +371,24 @@ export default function MedicalAnnotationDemoPage() {
   function runRegionGrow() {
     const seedX = 44 + Math.round(Math.random() * 18);
     const seedY = 40 + Math.round(Math.random() * 18);
+    if (workflowMode === "segmentation") {
+      const region = Array.from({ length: 18 }, (_, index) => ({
+        id: `${Date.now()}-seg-${index}`,
+        caseId: activeCaseId,
+        label,
+        plane: activePlane,
+        slice: clamp(activeSlice + Math.floor(index / 6) - 1, 0, maxSlice),
+        x: seedX + Math.round(Math.cos(index * 0.9) * (7 + (index % 3))),
+        y: seedY + Math.round(Math.sin(index * 0.8) * (6 + (index % 4))),
+        radius: brushRadius + 8,
+        source: "region-grow" as const,
+      }));
+
+      setSegmentations((current) => [...current, ...region]);
+      setSaveState("idle");
+      return;
+    }
+
     const cluster = Array.from({ length: 7 }, (_, index) => ({
       id: `${Date.now()}-${index}`,
       caseId: activeCaseId,
@@ -262,19 +405,52 @@ export default function MedicalAnnotationDemoPage() {
     setSaveState("idle");
   }
 
-  function saveAnnotations() {
-    localStorage.setItem("medical-annotation-demo", JSON.stringify({ annotations, status, notes }));
-    setSaveState("saved");
+  async function saveAnnotations() {
+    setSaveState("saving");
+    try {
+      const res = await fetch(`${API_BASE}/api/annotations/${activeCaseId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          annotations: caseAnnotations,
+          segmentations: caseSegmentations,
+          status,
+          notes,
+          modality: "NIfTI MRI",
+          region: volumeInfo?.fileName ?? "demo-volume",
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setSaveState("saved");
+    } catch {
+      setSaveState("error");
+    }
   }
 
-  function loadAnnotations() {
-    const saved = localStorage.getItem("medical-annotation-demo");
-    if (!saved) return;
-    const parsed = JSON.parse(saved) as { annotations: AnnotationPoint[]; status: Status; notes: string };
-    setAnnotations(parsed.annotations);
-    setStatus(parsed.status);
-    setNotes(parsed.notes);
-    setSaveState("loaded");
+  async function loadAnnotations() {
+    setSaveState("loading");
+    try {
+      const res = await fetch(`${API_BASE}/api/annotations/${activeCaseId}`);
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json() as {
+        case: { status: Status; notes: string };
+        annotations: AnnotationPoint[];
+        segmentations: SegmentationStroke[];
+      };
+      setAnnotations((current) => [
+        ...current.filter((p) => p.caseId !== activeCaseId),
+        ...data.annotations.map((a) => ({ ...a, caseId: activeCaseId })),
+      ]);
+      setSegmentations((current) => [
+        ...current.filter((s) => s.caseId !== activeCaseId),
+        ...data.segmentations.map((s) => ({ ...s, caseId: activeCaseId })),
+      ]);
+      setStatus(data.case.status);
+      setNotes(data.case.notes);
+      setSaveState("loaded");
+    } catch {
+      setSaveState("error");
+    }
   }
 
   function exportJson() {
@@ -298,9 +474,40 @@ export default function MedicalAnnotationDemoPage() {
     URL.revokeObjectURL(url);
   }
 
+  function exportSegmentationMask() {
+    const payload = buildSegmentationLabelmapExport(caseSegmentations, volumeInfo, activeCaseId);
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${activeCaseId}-segmentation-labelmap.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportSegmentationNifti() {
+    const payload = buildSegmentationNiftiGz(caseSegmentations, volumeInfo);
+    const blob = new Blob([toArrayBuffer(payload)], { type: "application/gzip" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${activeCaseId}-segmentation-mask.nii.gz`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   function resetCase() {
     setAnnotations((current) => current.filter((point) => point.caseId !== activeCaseId));
+    setSegmentations((current) => current.filter((stroke) => stroke.caseId !== activeCaseId));
     setSelectedAnnotationId(null);
+    setSelectedSegmentationId(null);
+    setSaveState("idle");
+  }
+
+  function clearActiveSegmentationSlice() {
+    setSegmentations((current) => current.filter(
+      (stroke) => !(stroke.caseId === activeCaseId && stroke.plane === activePlane && stroke.slice === activeSlice),
+    ));
     setSaveState("idle");
   }
 
@@ -357,9 +564,39 @@ export default function MedicalAnnotationDemoPage() {
             <Panel title="Annotation Tools">
               <div className="space-y-4">
                 <div>
-                  <p className="mb-2 text-xs uppercase tracking-wider text-zinc-500">Mode</p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(["paint", "select", "move"] as ToolMode[]).map((mode) => (
+                  <p className="mb-2 text-xs uppercase tracking-wider text-zinc-500">Workflow</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["landmarks", "segmentation"] as WorkflowMode[]).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => {
+                          setWorkflowMode(mode);
+                          setToolMode("paint");
+                          setSelectedAnnotationId(null);
+                          setSelectedSegmentationId(null);
+                        }}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold capitalize transition ${
+                          workflowMode === mode
+                            ? "border-teal-300/40 bg-teal-300/15 text-teal-100"
+                            : "border-white/[0.1] text-zinc-400 hover:text-white"
+                        }`}
+                      >
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-xs uppercase tracking-wider text-zinc-500">
+                    {workflowMode === "segmentation" ? "Segmentation mode" : "Landmark mode"}
+                  </p>
+                  <div className={`grid gap-2 ${workflowMode === "segmentation" ? "grid-cols-4" : "grid-cols-3"}`}>
+                    {(workflowMode === "segmentation"
+                      ? (["paint", "erase", "select", "move"] as ToolMode[])
+                      : (["paint", "select", "move"] as ToolMode[])
+                    ).map((mode) => (
                       <button
                         key={mode}
                         type="button"
@@ -396,7 +633,7 @@ export default function MedicalAnnotationDemoPage() {
 
                 <div>
                   <div className="mb-2 flex justify-between text-xs uppercase tracking-wider text-zinc-500">
-                    <span>Brush radius</span>
+                    <span>{workflowMode === "segmentation" ? "Mask brush radius" : "Brush radius"}</span>
                     <span>{brushRadius}px</span>
                   </div>
                   <input
@@ -409,13 +646,41 @@ export default function MedicalAnnotationDemoPage() {
                   />
                 </div>
 
+                {workflowMode === "segmentation" && (
+                  <div>
+                    <div className="mb-2 flex justify-between text-xs uppercase tracking-wider text-zinc-500">
+                      <span>Mask opacity</span>
+                      <span>{Math.round(segmentationOpacity * 100)}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.15"
+                      max="0.75"
+                      step="0.05"
+                      value={segmentationOpacity}
+                      onChange={(event) => setSegmentationOpacity(Number(event.target.value))}
+                      className="w-full"
+                    />
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={runRegionGrow}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-teal-300 px-4 py-2.5 text-sm font-semibold text-[#04100f] transition hover:bg-teal-200"
                 >
-                  <Sparkles size={15} /> Region grow seed
+                  <Sparkles size={15} /> {workflowMode === "segmentation" ? "3D region grow seed" : "Region grow seed"}
                 </button>
+
+                {workflowMode === "segmentation" && visibleSegmentation.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearActiveSegmentationSlice}
+                    className="w-full rounded-full border border-red-300/20 px-4 py-2.5 text-sm font-semibold text-red-200 transition hover:bg-red-300/10"
+                  >
+                    Clear current mask slice
+                  </button>
+                )}
               </div>
             </Panel>
 
@@ -495,6 +760,84 @@ export default function MedicalAnnotationDemoPage() {
                 </p>
               )}
             </Panel>
+
+            <Panel title="Segmentation Mask">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] px-3 py-3">
+                  <p className="text-xs uppercase tracking-wider text-zinc-500">Active slice</p>
+                  <p className="mt-1 font-semibold text-white">{visibleSegmentation.length} strokes</p>
+                </div>
+                <div className="rounded-2xl border border-white/[0.08] bg-white/[0.025] px-3 py-3">
+                  <p className="text-xs uppercase tracking-wider text-zinc-500">Volume mask</p>
+                  <p className="mt-1 font-semibold text-white">{caseSegmentations.length} strokes</p>
+                </div>
+              </div>
+              <div className="mt-3 space-y-2 text-xs text-zinc-400">
+                {(Object.keys(LABEL_STYLES) as Label[]).map((item) => {
+                  const count = caseSegmentations.filter((stroke) => stroke.label === item).length;
+                  return (
+                    <div key={item} className="flex items-center justify-between rounded-full border border-white/[0.08] px-3 py-2">
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: LABEL_STYLES[item].color }}
+                        />
+                        {LABEL_STYLES[item].name}
+                      </span>
+                  <span>{count}</span>
+                </div>
+                  );
+                })}
+              </div>
+              {selectedSegmentation && (
+                <div className="mt-4 space-y-4 rounded-2xl border border-teal-300/20 bg-teal-300/5 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-teal-100">Selected stroke</p>
+
+                  <div>
+                    <p className="mb-2 text-xs uppercase tracking-wider text-zinc-500">Label</p>
+                    <select
+                      value={selectedSegmentation.label}
+                      onChange={(event) => updateSegmentationStroke(selectedSegmentation.id, { label: event.target.value as Label })}
+                      className="w-full rounded-2xl border border-white/[0.08] bg-[#0b1014] px-3 py-2 text-sm text-white outline-none focus:border-teal-300/50"
+                    >
+                      <option value="lesion">Lesion</option>
+                      <option value="organ">Organ</option>
+                      <option value="exclude">Exclude</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <div className="mb-2 flex justify-between text-xs uppercase tracking-wider text-zinc-500">
+                      <span>Radius</span>
+                      <span>{selectedSegmentation.radius}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="4"
+                      max="42"
+                      value={selectedSegmentation.radius}
+                      onChange={(event) => updateSegmentationStroke(selectedSegmentation.id, { radius: Number(event.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs text-zinc-500">
+                    <span>X {selectedSegmentation.x}</span>
+                    <span>Y {selectedSegmentation.y}</span>
+                    <span>Slice {selectedSegmentation.slice}</span>
+                    <span>{selectedSegmentation.source}</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={deleteSelectedSegmentationStroke}
+                    className="w-full rounded-full border border-red-300/20 px-4 py-2.5 text-sm font-semibold text-red-200 transition hover:bg-red-300/10"
+                  >
+                    Delete mask stroke
+                  </button>
+                </div>
+              )}
+            </Panel>
           </aside>
 
           <div className="space-y-6">
@@ -519,7 +862,9 @@ export default function MedicalAnnotationDemoPage() {
 
                 <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-xs text-zinc-400">
                   <MousePointer2 size={14} className="text-teal-300" />
-                  {toolMode === "paint" ? "Click to paint" : toolMode === "select" ? "Click a landmark to select" : "Drag selected landmark"}
+                  {workflowMode === "segmentation"
+                    ? toolMode === "paint" ? "Click to paint segmentation mask" : toolMode === "erase" ? "Click to erase mask" : toolMode === "select" ? "Click mask stroke to select" : "Drag selected mask stroke"
+                    : toolMode === "paint" ? "Click to paint" : toolMode === "select" ? "Click a landmark to select" : "Drag selected landmark"}
                 </div>
               </div>
 
@@ -533,9 +878,9 @@ export default function MedicalAnnotationDemoPage() {
                   onMouseUp={stopDrag}
                   onMouseLeave={stopDrag}
                   className={`relative min-h-[520px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#050709] text-left ${
-                    toolMode === "paint"
+                    toolMode === "paint" || toolMode === "erase"
                       ? "cursor-crosshair"
-                      : toolMode === "move" && selectedAnnotation
+                      : toolMode === "move" && (selectedAnnotation || selectedSegmentation)
                         ? "cursor-move"
                         : zoom > 1 ? dragging ? "cursor-grabbing" : "cursor-grab" : "cursor-default"
                   }`}
@@ -556,6 +901,28 @@ export default function MedicalAnnotationDemoPage() {
                       </div>
 	                    )}
 	                    <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:32px_32px]" />
+	                    {visibleSegmentation.map((stroke) => {
+                        const strokeColor = LABEL_STYLES[stroke.label].color;
+                        const viewportPosition = imagePointToViewportPosition(stroke, viewportSize, volumeInfo, activePlane);
+                        const selected = stroke.id === selectedSegmentationId;
+
+                        return (
+                          <div
+                            key={stroke.id}
+                            className={`pointer-events-none absolute z-10 rounded-full blur-[1px] ${
+                              selected ? "ring-2 ring-white ring-offset-2 ring-offset-black" : ""
+                            }`}
+                            style={{
+                              left: viewportPosition.left - stroke.radius,
+                              top: viewportPosition.top - stroke.radius,
+                              width: stroke.radius * 2,
+                              height: stroke.radius * 2,
+                              backgroundColor: hexToRgba(strokeColor, segmentationOpacity),
+                              boxShadow: `0 0 ${stroke.radius * 1.8}px ${hexToRgba(strokeColor, segmentationOpacity * 0.7)}`,
+                            }}
+                          />
+                        );
+                      })}
 	                    {visibleAnnotations.map((point, index) => {
                         const pointColor = point.color ?? LABEL_STYLES[point.label].color;
                         const selected = point.id === selectedAnnotationId;
@@ -605,8 +972,13 @@ export default function MedicalAnnotationDemoPage() {
                     <div className="flex items-center gap-2 text-sm text-zinc-300">
                       <Brush size={16} className="text-teal-300" />
                       {visibleAnnotations.length} marks visible on this slice
+                      {visibleSegmentation.length > 0 && (
+                        <span className="text-teal-200">Â· {visibleSegmentation.length} mask strokes</span>
+                      )}
                     </div>
-                    <div className="text-xs text-zinc-500">{caseAnnotations.length} total annotations in case</div>
+                    <div className="text-xs text-zinc-500">
+                      {caseAnnotations.length} landmarks Â· {caseSegmentations.length} mask strokes
+                    </div>
                   </div>
                 </button>
 
@@ -655,17 +1027,27 @@ export default function MedicalAnnotationDemoPage() {
                   </div>
 
                   <div className="grid gap-3">
-                    <ActionButton icon={Save} label="Save state" onClick={saveAnnotations} />
-                    <ActionButton icon={Database} label="Load saved state" onClick={loadAnnotations} />
+                    <ActionButton icon={Save} label="Save to database" onClick={() => { void saveAnnotations(); }} />
+                    <ActionButton icon={Database} label="Load from database" onClick={() => { void loadAnnotations(); }} />
                     <ActionButton icon={Download} label="Export JSON" onClick={exportJson} />
                     <ActionButton icon={Download} label="Export Slicer .mrk.json" onClick={exportSlicerMarkups} />
+                    <ActionButton icon={Download} label="Export Segmentation Mask" onClick={exportSegmentationMask} />
+                    <ActionButton icon={Download} label="Export Segmentation .nii.gz" onClick={exportSegmentationNifti} />
                     <ActionButton icon={RotateCcw} label="Clear case" onClick={resetCase} muted />
                   </div>
 
                   {saveState !== "idle" && (
-                    <div className="flex items-center gap-2 rounded-2xl border border-teal-300/20 bg-teal-300/10 px-4 py-3 text-sm text-teal-100">
+                    <div className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm ${
+                      saveState === "error"
+                        ? "border-red-300/20 bg-red-300/10 text-red-100"
+                        : "border-teal-300/20 bg-teal-300/10 text-teal-100"
+                    }`}>
                       <CheckCircle2 size={16} />
-                      {saveState === "saved" ? "Annotation state saved locally." : "Saved annotation state loaded."}
+                      {saveState === "saving" && "Saving to database…"}
+                      {saveState === "saved" && "Saved to Postgres."}
+                      {saveState === "loading" && "Loading from database…"}
+                      {saveState === "loaded" && "Loaded from database."}
+                      {saveState === "error" && "Backend unreachable — check NEXT_PUBLIC_ANNOTATION_API_URL."}
                     </div>
                   )}
 
@@ -751,6 +1133,16 @@ function summarizeLabels(points: AnnotationPoint[]) {
   );
 }
 
+function summarizeSegmentation(strokes: SegmentationStroke[]) {
+  return strokes.reduce<Record<Label, number>>(
+    (summary, stroke) => {
+      summary[stroke.label] += 1;
+      return summary;
+    },
+    { lesion: 0, organ: 0, exclude: 0 },
+  );
+}
+
 type IconComponent = ComponentType<{ size?: number; className?: string }>;
 
 function getPlanePixelSize(volume: VolumeInfo | null, plane: Plane) {
@@ -782,7 +1174,7 @@ function getImageRect(viewportWidth: number, viewportHeight: number, volume: Vol
 }
 
 function imagePointToViewportPosition(
-  point: AnnotationPoint,
+  point: Pick<AnnotationPoint, "x" | "y">,
   viewportSize: { width: number; height: number },
   volume: VolumeInfo | null,
   plane: Plane,
@@ -793,6 +1185,15 @@ function imagePointToViewportPosition(
     left: imageRect.left + (point.x / 100) * imageRect.width,
     top: imageRect.top + (point.y / 100) * imageRect.height,
   };
+}
+
+function hexToRgba(hex: string, alpha: number) {
+  const normalized = hex.replace("#", "");
+  const red = Number.parseInt(normalized.slice(0, 2), 16);
+  const green = Number.parseInt(normalized.slice(2, 4), 16);
+  const blue = Number.parseInt(normalized.slice(4, 6), 16);
+
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
 async function parseNiftiFile(file: File): Promise<VolumeInfo> {
@@ -845,6 +1246,7 @@ async function parseNiftiFile(file: File): Promise<VolumeInfo> {
   return {
     data: Float32Array.from(rawData),
     dims,
+    pixDims: header.pixDims,
     affine: header.affine,
     fileName: file.name,
   };
@@ -923,7 +1325,161 @@ function buildSlicerMarkups(points: AnnotationPoint[], volume: VolumeInfo | null
   };
 }
 
-function annotationToVoxel(point: AnnotationPoint, volume: VolumeInfo | null): [number, number, number] {
+function buildSegmentationLabelmapExport(strokes: SegmentationStroke[], volume: VolumeInfo | null, caseId: string) {
+  const { dims, mask } = buildSegmentationMask(strokes, volume);
+
+  return {
+    format: "saad-medical-annotation-segmentation-labelmap-v1",
+    caseId,
+    sourceVolume: volume?.fileName ?? "demo-volume",
+    dimensions: dims,
+    dataType: "uint8",
+    storageOrder: "x-fastest",
+    coordinateSystem: "NIFTI voxel indices with source affine",
+    affine: volume?.affine ?? identityAffine(),
+    labels: {
+      0: { name: "background", color: "#000000" },
+      1: { name: "lesion", color: LABEL_STYLES.lesion.color },
+      2: { name: "organ", color: LABEL_STYLES.organ.color },
+      3: { name: "exclude", color: LABEL_STYLES.exclude.color },
+    },
+    sourceStrokes: strokes,
+    voxelCount: countNonZero(mask),
+    encoding: {
+      type: "run-length",
+      description: "Flat uint8 labelmap compressed as [labelValue, runLength] pairs.",
+      runs: rleEncode(mask),
+    },
+  };
+}
+
+function buildSegmentationNiftiGz(strokes: SegmentationStroke[], volume: VolumeInfo | null) {
+  const { dims, mask } = buildSegmentationMask(strokes, volume);
+  const [xDim, yDim, zDim] = dims;
+  const header = new nifti.NIFTI1();
+
+  header.littleEndian = true;
+  header.dims = [3, xDim, yDim, zDim, 1, 1, 1, 1];
+  header.pixDims = normalizePixDims(volume?.pixDims);
+  header.datatypeCode = nifti.NIFTI1.TYPE_UINT8;
+  header.numBitsPerVoxel = 8;
+  header.vox_offset = 352;
+  header.scl_slope = 1;
+  header.scl_inter = 0;
+  header.xyzt_units = nifti.NIFTI1.UNITS_MM;
+  header.cal_min = 0;
+  header.cal_max = 3;
+  header.slice_start = 0;
+  header.slice_end = zDim - 1;
+  header.qform_code = 0;
+  header.sform_code = nifti.NIFTI1.XFORM_SCANNER_ANAT;
+  header.affine = volume?.affine ?? identityAffine();
+  header.description = "Segmentation mask exported from Saad Ahmad medical annotation demo";
+  header.intent_name = "SEGMENTATION";
+  header.magic = "n+1\0";
+
+  const headerBytes = new Uint8Array(header.toArrayBuffer());
+  const niftiBytes = new Uint8Array(headerBytes.length + mask.length);
+  niftiBytes.set(headerBytes, 0);
+  niftiBytes.set(mask, headerBytes.length);
+
+  return gzipSync(niftiBytes);
+}
+
+function buildSegmentationMask(strokes: SegmentationStroke[], volume: Pick<VolumeInfo, "dims"> | null) {
+  const dims = volume?.dims ?? [100, 100, 100] as [number, number, number];
+  const [xDim, yDim, zDim] = dims;
+  const mask = new Uint8Array(xDim * yDim * zDim);
+  const labelValues: Record<Label, number> = { lesion: 1, organ: 2, exclude: 3 };
+
+  strokes.forEach((stroke) => {
+    paintStrokeIntoMask(mask, dims, stroke, labelValues[stroke.label]);
+  });
+
+  return { dims, mask };
+}
+
+function paintStrokeIntoMask(mask: Uint8Array, dims: [number, number, number], stroke: SegmentationStroke, labelValue: number) {
+  const [xDim, yDim, zDim] = dims;
+  const [cx, cy, cz] = annotationToVoxel(stroke, { dims });
+  const radius = Math.max(1, Math.round(stroke.radius));
+
+  const setVoxel = (x: number, y: number, z: number) => {
+    if (x < 0 || x >= xDim || y < 0 || y >= yDim || z < 0 || z >= zDim) return;
+    mask[Math.round(x) + Math.round(y) * xDim + Math.round(z) * xDim * yDim] = labelValue;
+  };
+
+  for (let row = -radius; row <= radius; row++) {
+    for (let col = -radius; col <= radius; col++) {
+      if (col * col + row * row > radius * radius) continue;
+
+      if (stroke.plane === "axial") {
+        setVoxel(Math.round(cx + col), Math.round(cy + row), Math.round(cz));
+      }
+
+      if (stroke.plane === "coronal") {
+        setVoxel(Math.round(cx + col), Math.round(cy), Math.round(cz + row));
+      }
+
+      if (stroke.plane === "sagittal") {
+        setVoxel(Math.round(cx), Math.round(cy + col), Math.round(cz + row));
+      }
+    }
+  }
+}
+
+function normalizePixDims(pixDims?: number[]) {
+  return [
+    pixDims?.[0] || 1,
+    pixDims?.[1] || 1,
+    pixDims?.[2] || 1,
+    pixDims?.[3] || 1,
+    pixDims?.[4] || 1,
+    pixDims?.[5] || 1,
+    pixDims?.[6] || 1,
+    pixDims?.[7] || 1,
+  ];
+}
+
+function toArrayBuffer(bytes: Uint8Array) {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return buffer;
+}
+
+function rleEncode(mask: Uint8Array) {
+  if (mask.length === 0) return [];
+
+  const runs: [number, number][] = [];
+  let current = mask[0];
+  let length = 1;
+
+  for (let index = 1; index < mask.length; index++) {
+    if (mask[index] === current) {
+      length += 1;
+    } else {
+      runs.push([current, length]);
+      current = mask[index];
+      length = 1;
+    }
+  }
+
+  runs.push([current, length]);
+  return runs;
+}
+
+function countNonZero(mask: Uint8Array) {
+  let count = 0;
+  mask.forEach((value) => {
+    if (value !== 0) count += 1;
+  });
+  return count;
+}
+
+function annotationToVoxel(
+  point: Pick<AnnotationPoint, "plane" | "slice" | "x" | "y">,
+  volume: Pick<VolumeInfo, "dims"> | null,
+): [number, number, number] {
   const [xDim, yDim, zDim] = volume?.dims ?? [100, 100, 100];
   const xPercent = clamp(point.x / 100, 0, 1);
   const yPercent = clamp(point.y / 100, 0, 1);
