@@ -51,7 +51,6 @@ type AnnotationVersion = {
   segmentation_count: number;
   created_at: string;
 };
-};
 
 type AnnotationPoint = {
   id: string;
