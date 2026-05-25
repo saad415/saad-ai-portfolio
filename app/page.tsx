@@ -18,7 +18,7 @@ const projects: Project[] = [
       "Browser-based volumetric MRI annotation platform with NIfTI upload, 3-plane viewing, editable landmarks, segmentation masks, 3D region-growing tools, Slicer-compatible exports, and ML-ready dataset outputs.",
     pipeline: ["NIfTI Upload", "3D Viewer", "Landmarks", "Segmentation", "Slicer Export", "ML Dataset"],
     tech: ["Next.js", "FastAPI", "PostgreSQL", "Docker", "NIfTI", "3D Slicer"],
-    href: "/projects/medical-annotation-demo",
+    href: "/projects/medical-annotation",
   },
   {
     title: "Portfolio Website",
