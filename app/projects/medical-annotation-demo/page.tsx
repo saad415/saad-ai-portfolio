@@ -163,7 +163,7 @@ export default function MedicalAnnotationDemoPage() {
   useEffect(() => {
     if (!volumeInfo || !canvasRef.current) return;
     renderVolumeSlice(canvasRef.current, volumeInfo, activePlane, activeSlice);
-  }, [activePlane, activeSlice, volumeInfo]);
+  }, [activePlane, activeSlice, volumeInfo, view]);
 
   useEffect(() => { void fetchCases(); }, []);
 
