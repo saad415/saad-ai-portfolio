@@ -90,6 +90,7 @@ const PLANE_META: Record<Plane, { label: string; axis: string }> = {
 export default function MedicalAnnotationDemoPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportRef = useRef<HTMLButtonElement | null>(null);
+  const volumeFileRef = useRef<File | null>(null);
   const [activePlane, setActivePlane] = useState<Plane>("axial");
   const [slice, setSlice] = useState(48);
   const [label, setLabel] = useState<Label>("lesion");
@@ -222,6 +223,7 @@ export default function MedicalAnnotationDemoPage() {
     setSelectedAnnotationId(null);
     setSelectedSegmentationId(null);
     setVolumeInfo(null);
+    volumeFileRef.current = null;
     setStatus("in-progress");
     setNotes("");
     setSaveState("idle");
@@ -253,6 +255,7 @@ export default function MedicalAnnotationDemoPage() {
 
     try {
       const parsed = await parseNiftiFile(file);
+      volumeFileRef.current = file;
       setVolumeInfo(parsed);
       setActivePlane("axial");
       setSlice(Math.floor(getMaxSlice(parsed, "axial") / 2));
@@ -260,14 +263,6 @@ export default function MedicalAnnotationDemoPage() {
       setNotes(`Uploaded ${file.name}. Annotate relevant slices and export ML-ready JSON.`);
       setSaveState("idle");
       resetViewport();
-
-      // Upload to Vercel Blob via backend (non-blocking — best effort)
-      const caseId = `uploaded-${file.name}`;
-      const form = new FormData();
-      form.append("file", file);
-      fetch(`${API_BASE}/api/annotations/${caseId}/volume`, { method: "POST", body: form }).catch(() => {
-        // Blob upload failure is non-fatal; local rendering still works
-      });
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Could not load this NIfTI file.");
     }
@@ -493,6 +488,15 @@ export default function MedicalAnnotationDemoPage() {
   async function saveAnnotations() {
     setSaveState("saving");
     try {
+      // Upload volume file to Supabase if we have the original file in memory
+      if (volumeFileRef.current) {
+        const form = new FormData();
+        form.append("file", volumeFileRef.current);
+        await fetch(`${API_BASE}/api/annotations/${activeCaseId}/volume`, { method: "POST", body: form }).catch(() => {
+          // non-fatal — annotations still save even if volume upload fails
+        });
+      }
+
       const res = await fetch(`${API_BASE}/api/annotations/${activeCaseId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
