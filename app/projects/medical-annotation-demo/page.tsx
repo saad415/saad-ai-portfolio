@@ -433,7 +433,7 @@ export default function MedicalAnnotationDemoPage() {
       const res = await fetch(`${API_BASE}/api/annotations/${activeCaseId}`);
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json() as {
-        case: { status: Status; notes: string };
+        case: { status: Status; notes: string; volume_url: string | null; volume_file_name: string | null };
         annotations: AnnotationPoint[];
         segmentations: SegmentationStroke[];
       };
@@ -447,6 +447,21 @@ export default function MedicalAnnotationDemoPage() {
       ]);
       setStatus(data.case.status);
       setNotes(data.case.notes);
+
+      // Restore volume from Supabase if not already loaded
+      if (data.case.volume_url && !volumeInfo) {
+        const niftiRes = await fetch(data.case.volume_url);
+        if (niftiRes.ok) {
+          const blob = await niftiRes.blob();
+          const file = new File([blob], data.case.volume_file_name ?? "volume.nii.gz");
+          const parsed = await parseNiftiFile(file);
+          setVolumeInfo(parsed);
+          setActivePlane("axial");
+          setSlice(Math.floor(getMaxSlice(parsed, "axial") / 2));
+          resetViewport();
+        }
+      }
+
       setSaveState("loaded");
     } catch {
       setSaveState("error");

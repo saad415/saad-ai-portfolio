@@ -23,6 +23,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://www.saadahmad.de",
+        "https://saad-ai-portfolio.vercel.app",
+        "https://saad-ai-portfolio-production.up.railway.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],

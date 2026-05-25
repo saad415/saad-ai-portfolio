@@ -1,13 +1,16 @@
-import json
 import os
 from datetime import datetime, timezone
 from typing import Any
 
-import httpx
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
+from supabase import create_client
 
 from app.db import get_cursor
+
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
+BUCKET = "annotation-volumes"
 
 router = APIRouter()
 
@@ -255,28 +258,20 @@ async def upload_volume(case_id: str, file: UploadFile = File(...)):
     if not (file.filename or "").lower().endswith((".nii", ".nii.gz")):
         raise HTTPException(status_code=400, detail="Only .nii or .nii.gz files are supported.")
 
-    token = os.environ.get("BLOB_READ_WRITE_TOKEN", "")
-    if not token:
-        raise HTTPException(status_code=503, detail="Blob storage not configured.")
+    if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+        raise HTTPException(status_code=503, detail="Supabase storage not configured.")
 
     contents = await file.read()
-    safe_name = f"nifti/{case_id}/{file.filename}"
+    storage_path = f"{case_id}/{file.filename}"
 
-    async with httpx.AsyncClient(timeout=60) as client:
-        resp = await client.put(
-            f"https://blob.vercel-storage.com/{safe_name}",
-            content=contents,
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/octet-stream",
-                "x-add-random-suffix": "1",
-            },
-        )
+    sb = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+    sb.storage.from_(BUCKET).upload(
+        path=storage_path,
+        file=contents,
+        file_options={"content-type": "application/octet-stream", "upsert": "true"},
+    )
 
-    if resp.status_code not in (200, 201):
-        raise HTTPException(status_code=502, detail=f"Blob upload failed: {resp.text}")
-
-    blob_url = resp.json()["url"]
+    public_url = sb.storage.from_(BUCKET).get_public_url(storage_path)
 
     with get_cursor() as cur:
         cur.execute("""
@@ -286,6 +281,6 @@ async def upload_volume(case_id: str, file: UploadFile = File(...)):
                 volume_url       = EXCLUDED.volume_url,
                 volume_file_name = EXCLUDED.volume_file_name,
                 updated_at       = NOW()
-        """, (case_id, blob_url, file.filename))
+        """, (case_id, public_url, file.filename))
 
-    return {"url": blob_url, "fileName": file.filename, "caseId": case_id}
+    return {"url": public_url, "fileName": file.filename, "caseId": case_id}
