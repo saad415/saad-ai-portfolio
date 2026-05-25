@@ -18,6 +18,11 @@ type AskResponse = {
   sources?: AskSource[];
 };
 
+type ChatTurn = {
+  question: string;
+  answer: string;
+};
+
 const suggestions = [
   "What was Saad's master's thesis about?",
   "How does the medical annotation platform work?",
@@ -31,6 +36,7 @@ export default function AskPage() {
   const [sources, setSources] = useState<AskSource[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [history, setHistory] = useState<ChatTurn[]>([]);
 
   const ask = async (nextQuestion = question) => {
     const cleanQuestion = nextQuestion.trim();
@@ -46,7 +52,10 @@ export default function AskPage() {
       const response = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: cleanQuestion }),
+        body: JSON.stringify({
+          question: cleanQuestion,
+          history: history.slice(-4),
+        }),
       });
       const payload = (await response.json()) as AskResponse;
 
@@ -54,9 +63,18 @@ export default function AskPage() {
         throw new Error(payload.error ?? "Could not answer this question.");
       }
 
-      setAnswer(payload.answer ?? "");
+      const nextAnswer = payload.answer ?? "";
+      setAnswer(nextAnswer);
       setSources(payload.sources ?? []);
       if (payload.error) setError(payload.error);
+      if (nextAnswer) {
+        setHistory((currentHistory) =>
+          [
+            ...currentHistory,
+            { question: cleanQuestion, answer: nextAnswer },
+          ].slice(-6)
+        );
+      }
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -133,7 +151,7 @@ export default function AskPage() {
                 />
                 <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] px-3 pt-3">
                   <p className="hidden text-xs text-zinc-600 sm:block">
-                    Uses curated retrieval first, then Groq for the answer.
+                    Uses vector retrieval first, then Groq for the answer.
                   </p>
                   <button
                     type="submit"

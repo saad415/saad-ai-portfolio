@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { retrievePortfolioSources } from "@/lib/portfolio-knowledge";
+import {
+  retrievePortfolioRagSources,
+  type PortfolioRagSource,
+} from "@/lib/portfolio-rag";
 
 export const runtime = "nodejs";
 
@@ -14,9 +17,17 @@ type GroqChatResponse = {
   };
 };
 
-function sourceContext(
-  sources: ReturnType<typeof retrievePortfolioSources>
-) {
+type ChatTurn = {
+  question: string;
+  answer: string;
+};
+
+type AskRequestBody = {
+  question?: unknown;
+  history?: unknown;
+};
+
+function sourceContext(sources: PortfolioRagSource[]) {
   return sources
     .map(
       (source, index) =>
@@ -27,11 +38,71 @@ function sourceContext(
     .join("\n\n");
 }
 
+function normalizeQuestion(question: string) {
+  return question
+    .replace(/\bgoogf\b/gi, "good")
+    .replace(/\bintergrate\b/gi, "integrate")
+    .replace(/\bhealpfull\b/gi, "helpful")
+    .replace(/\bimpliment\b/gi, "implement")
+    .replace(/\bimplmenet\b/gi, "implement")
+    .replace(/\bannote\b/gi, "annotate")
+    .replace(/\bsnnotation\b/gi, "annotation")
+    .replace(/\bportdolio\b/gi, "portfolio")
+    .trim();
+}
+
+function parseHistory(value: unknown): ChatTurn[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((turn) => {
+      if (
+        typeof turn === "object" &&
+        turn !== null &&
+        "question" in turn &&
+        "answer" in turn &&
+        typeof turn.question === "string" &&
+        typeof turn.answer === "string"
+      ) {
+        return {
+          question: turn.question.slice(0, 500),
+          answer: turn.answer.slice(0, 900),
+        };
+      }
+
+      return null;
+    })
+    .filter((turn): turn is ChatTurn => Boolean(turn))
+    .slice(-4);
+}
+
+function historyContext(history: ChatTurn[]) {
+  if (!history.length) {
+    return "No prior conversation in this session.";
+  }
+
+  return history
+    .map(
+      (turn, index) =>
+        `Turn ${index + 1}\nUser: ${turn.question}\nAssistant: ${turn.answer}`
+    )
+    .join("\n\n");
+}
+
+function isAmbiguousFollowUp(question: string) {
+  return /\b(this|that|it|he said|based on|good|better|why|how about)\b/i.test(
+    question
+  );
+}
+
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { question?: unknown };
+    const body = (await request.json()) as AskRequestBody;
     const question =
       typeof body.question === "string" ? body.question.trim() : "";
+    const history = parseHistory(body.history);
 
     if (!question) {
       return NextResponse.json(
@@ -47,7 +118,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const sources = retrievePortfolioSources(question, 5);
+    const normalizedQuestion = normalizeQuestion(question);
+    const retrievalQuestion =
+      history.length && isAmbiguousFollowUp(normalizedQuestion)
+        ? `${historyContext(history)}\n\nFollow-up question: ${normalizedQuestion}`
+        : normalizedQuestion;
+    const sources = await retrievePortfolioRagSources(retrievalQuestion, 5);
     const publicSources = sources.map(({ id, title, url, content }) => ({
       id,
       title,
@@ -82,13 +158,15 @@ export async function POST(request: Request) {
             {
               role: "system",
               content:
-                "You are Saad Ahmad's portfolio assistant. Answer only from the provided portfolio sources. Be concise, specific, and helpful. If the answer is not in the sources, say you do not know from the portfolio. Mention relevant source titles naturally when useful.",
+                "You are Saad Ahmad's portfolio assistant. Answer only from the provided portfolio sources and the prior conversation context. Be concise, specific, and helpful. Interpret obvious typos, shorthand, and informal wording. Resolve follow-up phrases like 'this', 'that', 'based on what he said', or 'is it good' from the recent conversation. If at least part of the question matches the sources, answer that part using the sources. Only say you do not know from the portfolio when none of the sources or prior conversation are relevant. Include source-title citations in brackets for key claims, for example [Thesis I: Lumbosacral Vertebra Localization].",
             },
             {
               role: "user",
-              content: `Portfolio sources:\n\n${sourceContext(
+              content: `Prior conversation:\n\n${historyContext(
+                history
+              )}\n\nPortfolio sources:\n\n${sourceContext(
                 sources
-              )}\n\nQuestion: ${question}`,
+              )}\n\nOriginal question: ${question}\nNormalized question: ${normalizedQuestion}`,
             },
           ],
         }),
