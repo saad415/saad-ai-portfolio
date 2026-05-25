@@ -68,15 +68,13 @@ export default function MedicalAnnotationPage() {
         </div>
 
         <div className="mt-8 flex flex-wrap gap-3">
-          <a
-            href="https://www.saadahmad.de/projects/medical-annotation-live"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/projects/medical-annotation-live"
             className="inline-flex items-center gap-2 rounded-full bg-teal-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-teal-300"
           >
             <Brain size={15} /> Live Demo
             <ArrowUpRight size={14} />
-          </a>
+          </Link>
           <a
             href="https://github.com/saad415/portfolio"
             target="_blank"
