@@ -7,6 +7,7 @@ import type { ComponentType, ReactNode } from "react";
 import { gzipSync } from "fflate";
 import * as nifti from "nifti-reader-js";
 import {
+  ArrowLeft,
   Brain,
   Brush,
   CheckCircle2,
@@ -14,6 +15,7 @@ import {
   Download,
   Layers3,
   MousePointer2,
+  Plus,
   RotateCcw,
   Save,
   Sparkles,
@@ -116,6 +118,7 @@ export default function MedicalAnnotationDemoPage() {
   const dragOrigin = useRef({ mx: 0, my: 0, px: 0, py: 0 });
   const [savedCases, setSavedCases] = useState<SavedCase[]>([]);
   const [casesLoading, setCasesLoading] = useState(false);
+  const [view, setView] = useState<"list" | "editor">("list");
 
   const activeCaseId = volumeInfo
     ? `uploaded-${volumeInfo.fileName}`
@@ -198,6 +201,7 @@ export default function MedicalAnnotationDemoPage() {
         }
       }
       setSaveState("loaded");
+      setView("editor");
     } catch { setSaveState("error"); }
   }
 
@@ -206,6 +210,20 @@ export default function MedicalAnnotationDemoPage() {
       await fetch(`${API_BASE}/api/annotations/${caseId}`, { method: "DELETE" });
       setSavedCases((prev) => prev.filter((c) => c.id !== caseId));
     } catch { /* non-fatal */ }
+  }
+
+  function startNewCase() {
+    setAnnotations([]);
+    setSegmentations([]);
+    setSelectedAnnotationId(null);
+    setSelectedSegmentationId(null);
+    setVolumeInfo(null);
+    setStatus("in-progress");
+    setNotes("");
+    setSaveState("idle");
+    setLoadError("");
+    resetViewport();
+    setView("editor");
   }
 
   useEffect(() => {
@@ -486,6 +504,7 @@ export default function MedicalAnnotationDemoPage() {
       if (!res.ok) throw new Error(await res.text());
       setSaveState("saved");
       void fetchCases();
+      setTimeout(() => setView("list"), 1200);
     } catch {
       setSaveState("error");
     }
@@ -613,7 +632,88 @@ export default function MedicalAnnotationDemoPage() {
           </div>
         </div>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[280px_1fr]">
+        {view === "list" ? (
+          <div className="mt-8">
+            <div className="mb-6 flex items-center justify-between">
+              <p className="text-sm text-zinc-500">
+                {casesLoading ? "Loading…" : `${savedCases.length} saved case${savedCases.length !== 1 ? "s" : ""}`}
+              </p>
+              <button
+                type="button"
+                onClick={startNewCase}
+                className="inline-flex items-center gap-2 rounded-full bg-teal-300 px-5 py-2.5 text-sm font-semibold text-[#04100f] transition hover:bg-teal-200"
+              >
+                <Plus size={16} /> Add MRI
+              </button>
+            </div>
+
+            {!casesLoading && savedCases.length === 0 && (
+              <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/[0.08] py-28 text-center">
+                <Brain size={44} className="mb-4 text-zinc-700" />
+                <p className="text-lg font-semibold text-zinc-400">No saved cases yet</p>
+                <p className="mt-2 text-sm text-zinc-600">Upload a NIfTI volume, annotate it, and save to Postgres.</p>
+                <button
+                  type="button"
+                  onClick={startNewCase}
+                  className="mt-8 inline-flex items-center gap-2 rounded-full border border-teal-300/40 px-5 py-2.5 text-sm font-semibold text-teal-200 transition hover:bg-teal-300/10"
+                >
+                  <Plus size={15} /> Add your first MRI
+                </button>
+              </div>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {savedCases.map((c) => (
+                <div key={c.id} className="rounded-3xl border border-white/[0.08] bg-[#0b1014]/70 p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="min-w-0 truncate font-semibold text-white">{c.volume_file_name ?? c.id}</p>
+                    <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                      c.status === "complete"
+                        ? "border-teal-300/30 bg-teal-300/10 text-teal-200"
+                        : c.status === "in-progress"
+                          ? "border-yellow-300/30 bg-yellow-300/10 text-yellow-200"
+                          : "border-white/10 text-zinc-400"
+                    }`}>
+                      {c.status}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {new Date(c.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                  </p>
+                  <div className="mt-3 flex gap-4 text-xs text-zinc-500">
+                    <span>{c.landmark_count} landmarks</span>
+                    <span>{c.stroke_count} strokes</span>
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { void loadCase(c); }}
+                      className="flex-1 rounded-full bg-teal-300 py-2 text-sm font-semibold text-[#04100f] transition hover:bg-teal-200"
+                    >
+                      Open
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { void deleteCase(c.id); }}
+                      className="rounded-full border border-red-300/20 px-4 py-2 text-sm font-semibold text-red-300 transition hover:bg-red-300/10"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-8">
+            <button
+              type="button"
+              onClick={() => setView("list")}
+              className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.08] px-4 py-2 text-sm text-zinc-400 transition hover:border-teal-300/40 hover:text-teal-100"
+            >
+              <ArrowLeft size={15} /> Back to cases
+            </button>
+            <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
           <aside className="space-y-4">
             <Panel title="Load NIfTI Volume">
               <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-teal-300/30 bg-teal-300/5 px-4 py-5 text-center transition hover:border-teal-300/60 hover:bg-teal-300/10">
@@ -838,58 +938,6 @@ export default function MedicalAnnotationDemoPage() {
                   Switch to Select mode and click a landmark to edit its name, label, color, size, or delete it.
                 </p>
               )}
-            </Panel>
-
-            <Panel title="Saved MRI Cases">
-              {casesLoading && <p className="text-xs text-zinc-500">Loading…</p>}
-              {!casesLoading && savedCases.length === 0 && (
-                <p className="text-xs text-zinc-500">No saved cases yet. Upload a NIfTI and save.</p>
-              )}
-              <div className="space-y-2">
-                {savedCases.map((c) => (
-                  <div
-                    key={c.id}
-                    className="rounded-2xl border border-white/[0.08] bg-white/[0.025] px-3 py-3"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-semibold text-white">
-                          {c.volume_file_name ?? c.id}
-                        </p>
-                        <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-zinc-500">
-                          <span className={`rounded-full px-2 py-0.5 border ${
-                            c.status === "complete"
-                              ? "border-teal-300/30 bg-teal-300/10 text-teal-200"
-                              : c.status === "in-progress"
-                                ? "border-yellow-300/30 bg-yellow-300/10 text-yellow-200"
-                                : "border-white/10 text-zinc-400"
-                          }`}>
-                            {c.status}
-                          </span>
-                          <span>{c.landmark_count} landmarks</span>
-                          <span>{c.stroke_count} strokes</span>
-                        </div>
-                      </div>
-                      <div className="flex shrink-0 gap-1">
-                        <button
-                          type="button"
-                          onClick={() => { void loadCase(c); }}
-                          className="rounded-full border border-teal-300/30 px-2 py-1 text-[10px] font-semibold text-teal-200 hover:bg-teal-300/10 transition"
-                        >
-                          Load
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { void deleteCase(c.id); }}
-                          className="rounded-full border border-red-300/20 px-2 py-1 text-[10px] font-semibold text-red-300 hover:bg-red-300/10 transition"
-                        >
-                          Del
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </Panel>
 
             <Panel title="Segmentation Mask">
@@ -1212,7 +1260,9 @@ export default function MedicalAnnotationDemoPage() {
               </div>
             </Panel>
           </div>
-        </div>
+            </div>
+          </div>
+        )}
       </section>
     </main>
   );
