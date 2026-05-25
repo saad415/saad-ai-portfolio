@@ -27,6 +27,17 @@ type Status = "unreviewed" | "in-progress" | "complete";
 type ToolMode = "paint" | "erase" | "select" | "move";
 type WorkflowMode = "landmarks" | "segmentation";
 
+type SavedCase = {
+  id: string;
+  status: Status;
+  modality: string | null;
+  volume_file_name: string | null;
+  volume_url: string | null;
+  updated_at: string;
+  landmark_count: number;
+  stroke_count: number;
+};
+
 type AnnotationPoint = {
   id: string;
   caseId: string;
@@ -103,8 +114,12 @@ export default function MedicalAnnotationDemoPage() {
   const [movingSegmentationId, setMovingSegmentationId] = useState<string | null>(null);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const dragOrigin = useRef({ mx: 0, my: 0, px: 0, py: 0 });
+  const [savedCases, setSavedCases] = useState<SavedCase[]>([]);
+  const [casesLoading, setCasesLoading] = useState(false);
 
-  const activeCaseId = volumeInfo ? `uploaded-${volumeInfo.fileName}` : "uploaded-demo";
+  const activeCaseId = volumeInfo
+    ? `uploaded-${volumeInfo.fileName}`
+    : (typeof window !== "undefined" && localStorage.getItem("last-case-id")) || "uploaded-demo";
   const maxSlice = getMaxSlice(volumeInfo, activePlane);
   const activeSlice = Math.min(slice, maxSlice);
   const visibleAnnotations = annotations.filter(
@@ -144,6 +159,54 @@ export default function MedicalAnnotationDemoPage() {
     if (!volumeInfo || !canvasRef.current) return;
     renderVolumeSlice(canvasRef.current, volumeInfo, activePlane, activeSlice);
   }, [activePlane, activeSlice, volumeInfo]);
+
+  useEffect(() => { void fetchCases(); }, []);
+
+  async function fetchCases() {
+    setCasesLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/annotations/cases`);
+      if (res.ok) setSavedCases(await res.json() as SavedCase[]);
+    } catch { /* non-fatal */ }
+    finally { setCasesLoading(false); }
+  }
+
+  async function loadCase(c: SavedCase) {
+    setSaveState("loading");
+    try {
+      const res = await fetch(`${API_BASE}/api/annotations/${c.id}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json() as {
+        case: { status: Status; notes: string; volume_url: string | null; volume_file_name: string | null };
+        annotations: AnnotationPoint[];
+        segmentations: SegmentationStroke[];
+      };
+      setAnnotations(data.annotations.map((a) => ({ ...a, caseId: c.id })));
+      setSegmentations(data.segmentations.map((s) => ({ ...s, caseId: c.id })));
+      setStatus(data.case.status);
+      setNotes(data.case.notes);
+      if (data.case.volume_url && (!volumeInfo || `uploaded-${volumeInfo.fileName}` !== c.id)) {
+        const niftiRes = await fetch(data.case.volume_url);
+        if (niftiRes.ok) {
+          const blob = await niftiRes.blob();
+          const file = new File([blob], data.case.volume_file_name ?? "volume.nii.gz");
+          const parsed = await parseNiftiFile(file);
+          setVolumeInfo(parsed);
+          setActivePlane("axial");
+          setSlice(Math.floor(getMaxSlice(parsed, "axial") / 2));
+          resetViewport();
+        }
+      }
+      setSaveState("loaded");
+    } catch { setSaveState("error"); }
+  }
+
+  async function deleteCase(caseId: string) {
+    try {
+      await fetch(`${API_BASE}/api/annotations/${caseId}`, { method: "DELETE" });
+      setSavedCases((prev) => prev.filter((c) => c.id !== caseId));
+    } catch { /* non-fatal */ }
+  }
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -422,6 +485,7 @@ export default function MedicalAnnotationDemoPage() {
       });
       if (!res.ok) throw new Error(await res.text());
       setSaveState("saved");
+      void fetchCases();
     } catch {
       setSaveState("error");
     }
@@ -774,6 +838,58 @@ export default function MedicalAnnotationDemoPage() {
                   Switch to Select mode and click a landmark to edit its name, label, color, size, or delete it.
                 </p>
               )}
+            </Panel>
+
+            <Panel title="Saved MRI Cases">
+              {casesLoading && <p className="text-xs text-zinc-500">Loading…</p>}
+              {!casesLoading && savedCases.length === 0 && (
+                <p className="text-xs text-zinc-500">No saved cases yet. Upload a NIfTI and save.</p>
+              )}
+              <div className="space-y-2">
+                {savedCases.map((c) => (
+                  <div
+                    key={c.id}
+                    className="rounded-2xl border border-white/[0.08] bg-white/[0.025] px-3 py-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold text-white">
+                          {c.volume_file_name ?? c.id}
+                        </p>
+                        <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-zinc-500">
+                          <span className={`rounded-full px-2 py-0.5 border ${
+                            c.status === "complete"
+                              ? "border-teal-300/30 bg-teal-300/10 text-teal-200"
+                              : c.status === "in-progress"
+                                ? "border-yellow-300/30 bg-yellow-300/10 text-yellow-200"
+                                : "border-white/10 text-zinc-400"
+                          }`}>
+                            {c.status}
+                          </span>
+                          <span>{c.landmark_count} landmarks</span>
+                          <span>{c.stroke_count} strokes</span>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 gap-1">
+                        <button
+                          type="button"
+                          onClick={() => { void loadCase(c); }}
+                          className="rounded-full border border-teal-300/30 px-2 py-1 text-[10px] font-semibold text-teal-200 hover:bg-teal-300/10 transition"
+                        >
+                          Load
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { void deleteCase(c.id); }}
+                          className="rounded-full border border-red-300/20 px-2 py-1 text-[10px] font-semibold text-red-300 hover:bg-red-300/10 transition"
+                        >
+                          Del
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </Panel>
 
             <Panel title="Segmentation Mask">

@@ -250,7 +250,21 @@ def export_annotations(case_id: str):
 
 
 # ---------------------------------------------------------------------------
-# Volume upload → Vercel Blob
+# Delete case
+# ---------------------------------------------------------------------------
+
+@router.delete("/{case_id}")
+def delete_case(case_id: str):
+    with get_cursor() as cur:
+        cur.execute("SELECT id FROM annotation_cases WHERE id = %s", (case_id,))
+        if cur.fetchone() is None:
+            raise HTTPException(status_code=404, detail="Case not found")
+        cur.execute("DELETE FROM annotation_cases WHERE id = %s", (case_id,))
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Volume upload → Supabase Storage
 # ---------------------------------------------------------------------------
 
 @router.post("/{case_id}/volume")
