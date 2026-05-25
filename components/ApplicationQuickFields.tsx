@@ -140,7 +140,7 @@ export function ApplicationSubmitTodayToggle({
         className={submitToday ? submitTodayActiveClass : submitTodayIdleClass}
         aria-pressed={submitToday}
       >
-        Today
+        Urgent
       </button>
     </form>
   );
@@ -156,7 +156,7 @@ const prioritySummaryClass =
   "block w-32 cursor-pointer list-none rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-2 text-xs font-medium text-zinc-200 outline-none transition marker:hidden focus:border-teal-300/70 group-open:border-teal-300/70 [&::-webkit-details-marker]:hidden";
 
 const submitTodayIdleClass =
-  "rounded-full border border-white/[0.1] bg-white/[0.02] px-4 py-2 text-xs font-semibold text-zinc-300 transition hover:border-amber-300/50 hover:bg-amber-300/10 hover:text-amber-100";
+  "rounded-full border border-white/[0.1] bg-white/[0.02] px-4 py-2 text-xs font-semibold text-zinc-300 transition hover:border-red-300/50 hover:bg-red-400/10 hover:text-red-100";
 
 const submitTodayActiveClass =
-  "rounded-full border border-amber-300/50 bg-amber-300/15 px-4 py-2 text-xs font-semibold text-amber-100 shadow-[0_0_20px_rgba(252,211,77,0.12)] transition hover:bg-amber-300/20";
+  "rounded-full border border-red-300/50 bg-red-400/15 px-4 py-2 text-xs font-semibold text-red-100 shadow-[0_0_20px_rgba(248,113,113,0.14)] transition hover:bg-red-400/20";

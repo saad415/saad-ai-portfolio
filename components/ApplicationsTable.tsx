@@ -120,7 +120,7 @@ export default function ApplicationsTable({ applications }: { applications: Appl
             <tr>
               <th className="px-5 py-4">Organization</th>
               <th className="px-5 py-4">Title</th>
-              <th className="px-5 py-4">Today</th>
+              <th className="px-5 py-4">Urgent</th>
               <th
                 className="cursor-pointer select-none px-5 py-4 transition-colors hover:text-zinc-300"
                 onClick={() => handleSort("status")}
@@ -191,14 +191,14 @@ function ApplicationTableRow({ application }: { application: ApplicationRow }) {
   return (
     <tr className={`border-b align-top last:border-0 ${
       application.submit_today
-        ? "border-amber-300/20 bg-amber-300/[0.055]"
+        ? "border-red-300/20 bg-red-400/[0.06]"
         : "border-white/[0.06]"
     }`}>
       <td className="px-5 py-4 font-medium text-white">
         {application.organization}
         {application.submit_today && (
-          <p className="mt-2 inline-flex rounded-full border border-amber-300/40 bg-amber-300/10 px-2 py-0.5 text-[11px] font-semibold text-amber-100">
-            Submit today
+          <p className="mt-2 inline-flex rounded-full border border-red-300/40 bg-red-400/10 px-2 py-0.5 text-[11px] font-semibold text-red-100">
+            Urgent
           </p>
         )}
         <p className="mt-1 text-xs font-normal capitalize text-zinc-500">{application.type}</p>

@@ -43,10 +43,23 @@ export type OpportunityRow = {
   city: string | null;
   url: string;
   deadline: string | null;
+  posted_at: string | null;
   summary: string | null;
   match_score: number;
   matched_keywords: string[];
+  source_type: string;
+  is_original_source: boolean;
+  language_fit: string;
+  paid_fit: string;
+  competition_level: string;
+  technical_fit: number;
+  domain_fit: number;
+  freshness_score: number;
+  overall_score: number;
+  match_reason: string | null;
+  red_flags: string[];
   status: OpportunityStatus;
+  first_seen_at: string;
   discovered_at: string;
   updated_at: string;
 };
@@ -60,9 +73,21 @@ export type DiscoveredOpportunity = {
   city?: string | null;
   url: string;
   deadline?: string | null;
+  posted_at?: string | null;
   summary?: string | null;
   match_score: number;
   matched_keywords: string[];
+  source_type?: string;
+  is_original_source?: boolean;
+  language_fit?: string;
+  paid_fit?: string;
+  competition_level?: string;
+  technical_fit?: number;
+  domain_fit?: number;
+  freshness_score?: number;
+  overall_score?: number;
+  match_reason?: string | null;
+  red_flags?: string[];
 };
 
 const connectionString = process.env.DATABASE_URL;
@@ -120,13 +145,43 @@ export async function ensureOpportunitiesTable() {
       city TEXT,
       url TEXT NOT NULL UNIQUE,
       deadline DATE,
+      posted_at DATE,
       summary TEXT,
       match_score INTEGER NOT NULL DEFAULT 0,
       matched_keywords TEXT[] NOT NULL DEFAULT '{}',
+      source_type TEXT NOT NULL DEFAULT 'aggregator',
+      is_original_source BOOLEAN NOT NULL DEFAULT FALSE,
+      language_fit TEXT NOT NULL DEFAULT 'unknown',
+      paid_fit TEXT NOT NULL DEFAULT 'unknown',
+      competition_level TEXT NOT NULL DEFAULT 'unknown',
+      technical_fit INTEGER NOT NULL DEFAULT 0,
+      domain_fit INTEGER NOT NULL DEFAULT 0,
+      freshness_score INTEGER NOT NULL DEFAULT 0,
+      overall_score INTEGER NOT NULL DEFAULT 0,
+      match_reason TEXT,
+      red_flags TEXT[] NOT NULL DEFAULT '{}',
       status TEXT NOT NULL DEFAULT 'new',
+      first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       discovered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+  `;
+
+  await sql`
+    ALTER TABLE opportunities
+    ADD COLUMN IF NOT EXISTS posted_at DATE,
+    ADD COLUMN IF NOT EXISTS source_type TEXT NOT NULL DEFAULT 'aggregator',
+    ADD COLUMN IF NOT EXISTS is_original_source BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS language_fit TEXT NOT NULL DEFAULT 'unknown',
+    ADD COLUMN IF NOT EXISTS paid_fit TEXT NOT NULL DEFAULT 'unknown',
+    ADD COLUMN IF NOT EXISTS competition_level TEXT NOT NULL DEFAULT 'unknown',
+    ADD COLUMN IF NOT EXISTS technical_fit INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS domain_fit INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS freshness_score INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS overall_score INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS match_reason TEXT,
+    ADD COLUMN IF NOT EXISTS red_flags TEXT[] NOT NULL DEFAULT '{}',
+    ADD COLUMN IF NOT EXISTS first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
   `;
 }
 
@@ -185,10 +240,23 @@ export async function listOpportunities(): Promise<OpportunityRow[]> {
       city,
       url,
       deadline::text,
+      posted_at::text,
       summary,
       match_score,
       matched_keywords,
+      source_type,
+      is_original_source,
+      language_fit,
+      paid_fit,
+      competition_level,
+      technical_fit,
+      domain_fit,
+      freshness_score,
+      overall_score,
+      match_reason,
+      red_flags,
       status,
+      first_seen_at::text,
       discovered_at::text,
       updated_at::text
     FROM opportunities
@@ -215,7 +283,7 @@ export async function listOpportunities(): Promise<OpportunityRow[]> {
             AND LOWER(TRIM(applications.title)) = LOWER(TRIM(opportunities.title))
           )
       )
-    ORDER BY match_score DESC, discovered_at DESC;
+    ORDER BY overall_score DESC, match_score DESC, first_seen_at DESC;
   `;
 
   return rows as OpportunityRow[];
@@ -276,9 +344,21 @@ export async function saveDiscoveredOpportunities(opportunities: DiscoveredOppor
         city,
         url,
         deadline,
+        posted_at,
         summary,
         match_score,
-        matched_keywords
+        matched_keywords,
+        source_type,
+        is_original_source,
+        language_fit,
+        paid_fit,
+        competition_level,
+        technical_fit,
+        domain_fit,
+        freshness_score,
+        overall_score,
+        match_reason,
+        red_flags
       ) VALUES (
         ${opportunity.source},
         ${opportunity.type},
@@ -288,11 +368,40 @@ export async function saveDiscoveredOpportunities(opportunities: DiscoveredOppor
         ${opportunity.city ?? null},
         ${opportunity.url},
         ${opportunity.deadline ?? null},
+        ${opportunity.posted_at ?? null},
         ${opportunity.summary ?? null},
         ${opportunity.match_score},
-        ${opportunity.matched_keywords}
+        ${opportunity.matched_keywords},
+        ${opportunity.source_type ?? "aggregator"},
+        ${opportunity.is_original_source ?? false},
+        ${opportunity.language_fit ?? "unknown"},
+        ${opportunity.paid_fit ?? "unknown"},
+        ${opportunity.competition_level ?? "unknown"},
+        ${opportunity.technical_fit ?? opportunity.match_score},
+        ${opportunity.domain_fit ?? 0},
+        ${opportunity.freshness_score ?? 0},
+        ${opportunity.overall_score ?? opportunity.match_score},
+        ${opportunity.match_reason ?? null},
+        ${opportunity.red_flags ?? []}
       )
-      ON CONFLICT (url) DO NOTHING
+      ON CONFLICT (url) DO UPDATE
+      SET
+        match_score = GREATEST(opportunities.match_score, EXCLUDED.match_score),
+        overall_score = GREATEST(opportunities.overall_score, EXCLUDED.overall_score),
+        technical_fit = GREATEST(opportunities.technical_fit, EXCLUDED.technical_fit),
+        domain_fit = GREATEST(opportunities.domain_fit, EXCLUDED.domain_fit),
+        freshness_score = GREATEST(opportunities.freshness_score, EXCLUDED.freshness_score),
+        source_type = EXCLUDED.source_type,
+        is_original_source = opportunities.is_original_source OR EXCLUDED.is_original_source,
+        language_fit = EXCLUDED.language_fit,
+        paid_fit = EXCLUDED.paid_fit,
+        competition_level = EXCLUDED.competition_level,
+        posted_at = COALESCE(opportunities.posted_at, EXCLUDED.posted_at),
+        summary = COALESCE(EXCLUDED.summary, opportunities.summary),
+        matched_keywords = EXCLUDED.matched_keywords,
+        match_reason = COALESCE(EXCLUDED.match_reason, opportunities.match_reason),
+        red_flags = EXCLUDED.red_flags,
+        updated_at = NOW()
       RETURNING id;
     `;
 
@@ -378,7 +487,12 @@ export async function approveOpportunity(id: number) {
       CONCAT(
         'Imported from ', source,
         '. Match score: ', match_score,
+        '. Overall score: ', overall_score,
+        '. Language: ', language_fit,
+        '. Paid/funded: ', paid_fit,
+        '. Competition: ', competition_level,
         '. Keywords: ', array_to_string(matched_keywords, ', '),
+        CASE WHEN match_reason IS NULL THEN '' ELSE CONCAT(E'\n\nWhy it matches: ', match_reason) END,
         CASE WHEN summary IS NULL THEN '' ELSE CONCAT(E'\n\n', summary) END
       )
     FROM opportunities
