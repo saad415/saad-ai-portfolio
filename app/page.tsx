@@ -17,9 +17,9 @@ const projects: Project[] = [
     category: "Medical Imaging",
     categoryTag: "Full Stack",
     description:
-      "Browser-based volumetric MRI annotation platform with NIfTI upload, 3-plane viewing, editable landmarks, segmentation masks, 3D region-growing tools, Slicer-compatible exports, and ML-ready dataset outputs.",
-    pipeline: ["NIfTI Upload", "3D Viewer", "Landmarks", "Segmentation", "Slicer Export", "ML Dataset"],
-    tech: ["Next.js", "FastAPI", "PostgreSQL", "Docker", "NIfTI", "3D Slicer"],
+      "Production-style medical imaging platform with browser NIfTI review, 3-plane annotation, segmentation masks, versioned FastAPI/Postgres state, Slicer exports, ML-ready datasets, and a RAG-backed AI project assistant.",
+    pipeline: ["NIfTI Upload", "3D Viewer", "Segmentation", "Version History", "Slicer Export", "RAG Assistant"],
+    tech: ["Next.js", "FastAPI", "PostgreSQL", "pgvector", "Groq", "Docker", "NIfTI"],
     href: "/projects/medical-annotation",
   },
   {
