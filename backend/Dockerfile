@@ -2,6 +2,7 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# v2 - force cache invalidation
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
