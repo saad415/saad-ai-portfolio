@@ -163,10 +163,10 @@ def save_annotations(case_id: str, body: SaveAnnotationsBody):
 
         # Append a version snapshot
         cur.execute(
-            "SELECT COALESCE(MAX(version_number), 0) + 1 FROM annotation_versions WHERE case_id = %s",
+            "SELECT COALESCE(MAX(version_number), 0) + 1 AS next_ver FROM annotation_versions WHERE case_id = %s",
             (case_id,),
         )
-        next_ver = cur.fetchone()["coalesce"]
+        next_ver = cur.fetchone()["next_ver"]
         cur.execute("""
             INSERT INTO annotation_versions
                 (case_id, version_number, status, notes,
