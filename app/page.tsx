@@ -6,6 +6,8 @@ import ProjectsSection   from "@/components/ProjectsSection";
 import SkillsSection     from "@/components/SkillsSection";
 import PublicationsSection from "@/components/PublicationsSection";
 import ContactSection    from "@/components/ContactSection";
+import { Bot, ArrowUpRight } from "lucide-react";
+import Link from "next/link";
 import type { Project }  from "@/components/ProjectsSection";
 
 // ── Add your real projects here ──
@@ -101,6 +103,16 @@ export default function Home() {
 
       {/* 7. Contact */}
       <ContactSection />
+
+      <Link
+        href="/ask"
+        aria-label="Ask Saad AI"
+        className="fixed bottom-5 right-5 z-50 inline-flex items-center gap-2 rounded-full border border-teal-300/35 bg-teal-300 px-4 py-3 text-sm font-semibold text-[#04100f] shadow-2xl shadow-teal-950/35 transition hover:bg-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-200 focus:ring-offset-2 focus:ring-offset-[#070a0d]"
+      >
+        <Bot size={17} />
+        <span className="hidden sm:inline">Ask AI</span>
+        <ArrowUpRight size={15} className="hidden sm:block" />
+      </Link>
     </main>
   );
 }
