@@ -1260,7 +1260,6 @@ export default function MedicalAnnotationDemoPage() {
 
                   <div className="grid gap-3">
                     <ActionButton icon={Save} label="Save to database" onClick={() => { void saveAnnotations(); }} loading={saveState === "saving"} />
-                    <ActionButton icon={Database} label="Load from database" onClick={() => { void loadAnnotations(); }} loading={saveState === "loading"} />
                     <ActionButton
                       icon={Clock}
                       label={showHistory ? "Hide history" : `History${versions.length ? ` (${versions.length})` : ""}`}
