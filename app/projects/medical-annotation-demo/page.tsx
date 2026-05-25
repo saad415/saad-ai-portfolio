@@ -14,6 +14,7 @@ import {
   Database,
   Download,
   Layers3,
+  Loader2,
   MousePointer2,
   Plus,
   RotateCcw,
@@ -118,6 +119,7 @@ export default function MedicalAnnotationDemoPage() {
   const dragOrigin = useRef({ mx: 0, my: 0, px: 0, py: 0 });
   const [savedCases, setSavedCases] = useState<SavedCase[]>([]);
   const [casesLoading, setCasesLoading] = useState(false);
+  const [loadingCaseId, setLoadingCaseId] = useState<string | null>(null);
   const [view, setView] = useState<"list" | "editor">("list");
 
   const activeCaseId = volumeInfo
@@ -176,6 +178,7 @@ export default function MedicalAnnotationDemoPage() {
 
   async function loadCase(c: SavedCase) {
     setSaveState("loading");
+    setLoadingCaseId(c.id);
     try {
       const res = await fetch(`${API_BASE}/api/annotations/${c.id}`);
       if (!res.ok) throw new Error();
@@ -203,6 +206,7 @@ export default function MedicalAnnotationDemoPage() {
       setSaveState("loaded");
       setView("editor");
     } catch { setSaveState("error"); }
+    finally { setLoadingCaseId(null); }
   }
 
   async function deleteCase(caseId: string) {
@@ -687,9 +691,11 @@ export default function MedicalAnnotationDemoPage() {
                     <button
                       type="button"
                       onClick={() => { void loadCase(c); }}
-                      className="rounded-full bg-teal-300 px-5 py-2 text-sm font-semibold text-[#04100f] transition hover:bg-teal-200"
+                      disabled={loadingCaseId === c.id}
+                      className="inline-flex items-center gap-2 rounded-full bg-teal-300 px-5 py-2 text-sm font-semibold text-[#04100f] transition hover:bg-teal-200 disabled:opacity-70"
                     >
-                      Open
+                      {loadingCaseId === c.id ? <Loader2 size={14} className="animate-spin" /> : null}
+                      {loadingCaseId === c.id ? "Opening…" : "Open"}
                     </button>
                     <button
                       type="button"
@@ -1205,8 +1211,8 @@ export default function MedicalAnnotationDemoPage() {
                   </div>
 
                   <div className="grid gap-3">
-                    <ActionButton icon={Save} label="Save to database" onClick={() => { void saveAnnotations(); }} />
-                    <ActionButton icon={Database} label="Load from database" onClick={() => { void loadAnnotations(); }} />
+                    <ActionButton icon={Save} label="Save to database" onClick={() => { void saveAnnotations(); }} loading={saveState === "saving"} />
+                    <ActionButton icon={Database} label="Load from database" onClick={() => { void loadAnnotations(); }} loading={saveState === "loading"} />
                     <ActionButton icon={Download} label="Export JSON" onClick={exportJson} />
                     <ActionButton icon={Download} label="Export Slicer .mrk.json" onClick={exportSlicerMarkups} />
                     <ActionButton icon={Download} label="Export Segmentation Mask" onClick={exportSegmentationMask} />
@@ -1286,18 +1292,19 @@ function Metric({ icon: Icon, label, value }: { icon: IconComponent; label: stri
   );
 }
 
-function ActionButton({ icon: Icon, label, onClick, muted = false }: { icon: IconComponent; label: string; onClick: () => void; muted?: boolean }) {
+function ActionButton({ icon: Icon, label, onClick, muted = false, loading = false }: { icon: IconComponent; label: string; onClick: () => void; muted?: boolean; loading?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition ${
+      disabled={loading}
+      className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition disabled:opacity-60 ${
         muted
           ? "border border-white/[0.1] text-zinc-400 hover:border-red-300/30 hover:text-red-100"
           : "border border-white/[0.1] text-zinc-200 hover:border-teal-300/50 hover:text-teal-100"
       }`}
     >
-      <Icon size={15} />
+      {loading ? <Loader2 size={15} className="animate-spin" /> : <Icon size={15} />}
       {label}
     </button>
   );
