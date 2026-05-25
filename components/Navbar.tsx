@@ -7,12 +7,12 @@ export default function Navbar() {
         </a>
 
         <div className="hidden gap-8 text-sm text-zinc-300 md:flex">
-          <a href="#research" className="transition hover:text-teal-300">Thesis</a>
-          <a href="#experience" className="transition hover:text-teal-300">Experience</a>
-          <a href="#publications" className="transition hover:text-teal-300">Publications</a>
-          <a href="#projects" className="transition hover:text-teal-300">Projects</a>
-          <a href="#skills" className="transition hover:text-teal-300">Skills</a>
-          <a href="#contact" className="transition hover:text-teal-300">Contact</a>
+          <a href="/#research" className="transition hover:text-teal-300">Thesis</a>
+          <a href="/#experience" className="transition hover:text-teal-300">Experience</a>
+          <a href="/#publications" className="transition hover:text-teal-300">Publications</a>
+          <a href="/#projects" className="transition hover:text-teal-300">Projects</a>
+          <a href="/#skills" className="transition hover:text-teal-300">Skills</a>
+          <a href="/#contact" className="transition hover:text-teal-300">Contact</a>
         </div>
       </div>
     </nav>
