@@ -658,6 +658,22 @@ export default function MedicalAnnotationDemoPage() {
               </button>
             </div>
 
+            {casesLoading && (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-4 rounded-2xl border border-white/[0.08] bg-[#0b1014]/70 px-5 py-4 animate-pulse">
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3.5 w-2/3 rounded-full bg-white/[0.06]" />
+                      <div className="h-2.5 w-1/3 rounded-full bg-white/[0.04]" />
+                    </div>
+                    <div className="h-5 w-20 rounded-full bg-white/[0.06]" />
+                    <div className="h-8 w-16 rounded-full bg-white/[0.06]" />
+                    <div className="h-8 w-16 rounded-full bg-white/[0.04]" />
+                  </div>
+                ))}
+              </div>
+            )}
+
             {!casesLoading && savedCases.length === 0 && (
               <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/[0.08] py-28 text-center">
                 <Brain size={44} className="mb-4 text-zinc-700" />
