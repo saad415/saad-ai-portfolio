@@ -240,7 +240,7 @@ export default function MedicalAnnotationDemoPage() {
     observer.observe(viewport);
 
     return () => observer.disconnect();
-  }, []);
+  }, [view]);
 
   async function handleVolumeUpload(file: File | null) {
     if (!file) return;
