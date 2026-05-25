@@ -11,6 +11,16 @@ import type { Project }  from "@/components/ProjectsSection";
 // ── Add your real projects here ──
 const projects: Project[] = [
   {
+    title: "Medical MRI Annotation Platform",
+    category: "Medical Imaging",
+    categoryTag: "Full Stack",
+    description:
+      "Browser-based volumetric MRI annotation platform with NIfTI upload, 3-plane viewing, editable landmarks, segmentation masks, 3D region-growing tools, Slicer-compatible exports, and ML-ready dataset outputs.",
+    pipeline: ["NIfTI Upload", "3D Viewer", "Landmarks", "Segmentation", "Slicer Export", "ML Dataset"],
+    tech: ["Next.js", "FastAPI", "PostgreSQL", "Docker", "NIfTI", "3D Slicer"],
+    href: "/projects/medical-annotation-demo",
+  },
+  {
     title: "Portfolio Website",
     category: "Full Stack",
     categoryTag: "Full Stack",
