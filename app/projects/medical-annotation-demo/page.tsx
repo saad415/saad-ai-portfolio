@@ -662,33 +662,32 @@ export default function MedicalAnnotationDemoPage() {
               </div>
             )}
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-3">
               {savedCases.map((c) => (
-                <div key={c.id} className="rounded-3xl border border-white/[0.08] bg-[#0b1014]/70 p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="min-w-0 truncate font-semibold text-white">{c.volume_file_name ?? c.id}</p>
-                    <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${
-                      c.status === "complete"
-                        ? "border-teal-300/30 bg-teal-300/10 text-teal-200"
-                        : c.status === "in-progress"
-                          ? "border-yellow-300/30 bg-yellow-300/10 text-yellow-200"
-                          : "border-white/10 text-zinc-400"
-                    }`}>
-                      {c.status}
-                    </span>
+                <div key={c.id} className="flex items-center gap-4 rounded-2xl border border-white/[0.08] bg-[#0b1014]/70 px-5 py-4">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold text-white">{c.volume_file_name ?? c.id}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
+                      <span>{new Date(c.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
+                      <span>·</span>
+                      <span>{c.landmark_count} landmarks</span>
+                      <span>{c.stroke_count} strokes</span>
+                    </div>
                   </div>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    {new Date(c.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                  </p>
-                  <div className="mt-3 flex gap-4 text-xs text-zinc-500">
-                    <span>{c.landmark_count} landmarks</span>
-                    <span>{c.stroke_count} strokes</span>
-                  </div>
-                  <div className="mt-4 flex gap-2">
+                  <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                    c.status === "complete"
+                      ? "border-teal-300/30 bg-teal-300/10 text-teal-200"
+                      : c.status === "in-progress"
+                        ? "border-yellow-300/30 bg-yellow-300/10 text-yellow-200"
+                        : "border-white/10 text-zinc-400"
+                  }`}>
+                    {c.status}
+                  </span>
+                  <div className="flex shrink-0 gap-2">
                     <button
                       type="button"
                       onClick={() => { void loadCase(c); }}
-                      className="flex-1 rounded-full bg-teal-300 py-2 text-sm font-semibold text-[#04100f] transition hover:bg-teal-200"
+                      className="rounded-full bg-teal-300 px-5 py-2 text-sm font-semibold text-[#04100f] transition hover:bg-teal-200"
                     >
                       Open
                     </button>
