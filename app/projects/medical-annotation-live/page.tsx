@@ -86,6 +86,29 @@ type VolumeInfo = {
   fileName: string;
 };
 
+async function fetchCasesWithRetry(attempts = 4): Promise<SavedCase[]> {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      const res = await fetch(`${API_BASE}/api/annotations/cases`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`Case list request failed with ${res.status}`);
+      return await res.json() as SavedCase[];
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts - 1) {
+        await sleep(700 * 2 ** attempt);
+      }
+    }
+  }
+
+  throw lastError;
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 const LABEL_STYLES: Record<Label, { name: string; color: string; bg: string }> = {
   lesion: { name: "Lesion", color: "#f87171", bg: "bg-red-300/15 text-red-100 border-red-300/30" },
   organ: { name: "Organ", color: "#2dd4bf", bg: "bg-teal-300/15 text-teal-100 border-teal-300/30" },
@@ -130,7 +153,8 @@ export default function MedicalAnnotationDemoPage() {
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const dragOrigin = useRef({ mx: 0, my: 0, px: 0, py: 0 });
   const [savedCases, setSavedCases] = useState<SavedCase[]>([]);
-  const [casesLoading, setCasesLoading] = useState(false);
+  const [casesLoading, setCasesLoading] = useState(true);
+  const [casesError, setCasesError] = useState("");
   const [loadingCaseId, setLoadingCaseId] = useState<string | null>(null);
   const [versions, setVersions] = useState<AnnotationVersion[]>([]);
   const [versionsLoading, setVersionsLoading] = useState(false);
@@ -184,10 +208,13 @@ export default function MedicalAnnotationDemoPage() {
 
   async function fetchCases() {
     setCasesLoading(true);
+    setCasesError("");
     try {
-      const res = await fetch(`${API_BASE}/api/annotations/cases`);
-      if (res.ok) setSavedCases(await res.json() as SavedCase[]);
-    } catch { /* non-fatal */ }
+      const data = await fetchCasesWithRetry();
+      setSavedCases(data);
+    } catch {
+      setCasesError("Could not reach the annotation database. Please retry in a moment.");
+    }
     finally { setCasesLoading(false); }
   }
 
@@ -674,7 +701,22 @@ export default function MedicalAnnotationDemoPage() {
               </div>
             )}
 
-            {!casesLoading && savedCases.length === 0 && (
+            {!casesLoading && casesError && (
+              <div className="flex flex-col items-center justify-center rounded-3xl border border-red-300/20 bg-red-300/5 py-20 text-center">
+                <Database size={40} className="mb-4 text-red-200" />
+                <p className="text-lg font-semibold text-red-100">Database is waking up</p>
+                <p className="mt-2 max-w-md text-sm leading-6 text-zinc-500">{casesError}</p>
+                <button
+                  type="button"
+                  onClick={() => { void fetchCases(); }}
+                  className="mt-8 inline-flex items-center gap-2 rounded-full border border-teal-300/40 px-5 py-2.5 text-sm font-semibold text-teal-200 transition hover:bg-teal-300/10"
+                >
+                  <RotateCcw size={15} /> Retry loading cases
+                </button>
+              </div>
+            )}
+
+            {!casesLoading && !casesError && savedCases.length === 0 && (
               <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-white/[0.08] py-28 text-center">
                 <Brain size={44} className="mb-4 text-zinc-700" />
                 <p className="text-lg font-semibold text-zinc-400">No saved cases yet</p>
