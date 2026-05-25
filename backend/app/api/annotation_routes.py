@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import datetime, timezone
 from typing import Any
@@ -160,6 +161,25 @@ def save_annotations(case_id: str, body: SaveAnnotationsBody):
                 for s in body.segmentations
             ])
 
+        # Append a version snapshot
+        cur.execute(
+            "SELECT COALESCE(MAX(version_number), 0) + 1 FROM annotation_versions WHERE case_id = %s",
+            (case_id,),
+        )
+        next_ver = cur.fetchone()["coalesce"]
+        cur.execute("""
+            INSERT INTO annotation_versions
+                (case_id, version_number, status, notes,
+                 annotations, segmentations,
+                 annotation_count, segmentation_count)
+            VALUES (%s, %s, %s, %s, %s::jsonb, %s::jsonb, %s, %s)
+        """, (
+            case_id, next_ver, body.status, body.notes,
+            json.dumps([a.model_dump() for a in body.annotations]),
+            json.dumps([s.model_dump() for s in body.segmentations]),
+            len(body.annotations), len(body.segmentations),
+        ))
+
     return {"ok": True, "caseId": case_id}
 
 
@@ -261,6 +281,39 @@ def delete_case(case_id: str):
             raise HTTPException(status_code=404, detail="Case not found")
         cur.execute("DELETE FROM annotation_cases WHERE id = %s", (case_id,))
     return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Version history
+# ---------------------------------------------------------------------------
+
+@router.get("/cases/{case_id}/versions")
+def list_versions(case_id: str):
+    with get_cursor() as cur:
+        cur.execute("SELECT id FROM annotation_cases WHERE id = %s", (case_id,))
+        if cur.fetchone() is None:
+            raise HTTPException(status_code=404, detail="Case not found")
+        cur.execute("""
+            SELECT id, version_number, status, notes,
+                   annotation_count, segmentation_count, created_at
+            FROM annotation_versions
+            WHERE case_id = %s
+            ORDER BY version_number DESC
+        """, (case_id,))
+        return cur.fetchall()
+
+
+@router.get("/cases/{case_id}/versions/{version_id}")
+def get_version(case_id: str, version_id: int):
+    with get_cursor() as cur:
+        cur.execute("""
+            SELECT * FROM annotation_versions
+            WHERE id = %s AND case_id = %s
+        """, (version_id, case_id))
+        row = cur.fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Version not found")
+    return row
 
 
 # ---------------------------------------------------------------------------

@@ -11,6 +11,7 @@ import {
   Brain,
   Brush,
   CheckCircle2,
+  Clock,
   Database,
   Download,
   Layers3,
@@ -39,6 +40,17 @@ type SavedCase = {
   updated_at: string;
   landmark_count: number;
   stroke_count: number;
+};
+
+type AnnotationVersion = {
+  id: number;
+  version_number: number;
+  status: Status;
+  notes: string;
+  annotation_count: number;
+  segmentation_count: number;
+  created_at: string;
+};
 };
 
 type AnnotationPoint = {
@@ -121,6 +133,9 @@ export default function MedicalAnnotationDemoPage() {
   const [savedCases, setSavedCases] = useState<SavedCase[]>([]);
   const [casesLoading, setCasesLoading] = useState(false);
   const [loadingCaseId, setLoadingCaseId] = useState<string | null>(null);
+  const [versions, setVersions] = useState<AnnotationVersion[]>([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [view, setView] = useState<"list" | "editor">("list");
 
   const activeCaseId = volumeInfo
@@ -204,6 +219,7 @@ export default function MedicalAnnotationDemoPage() {
           resetViewport();
         }
       }
+      void fetchVersions(c.id);
       setSaveState("loaded");
       setView("editor");
     } catch { setSaveState("error"); }
@@ -217,6 +233,32 @@ export default function MedicalAnnotationDemoPage() {
     } catch { /* non-fatal */ }
   }
 
+  async function fetchVersions(caseId: string) {
+    setVersionsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/annotations/cases/${caseId}/versions`);
+      if (res.ok) setVersions(await res.json() as AnnotationVersion[]);
+    } catch { /* non-fatal */ }
+    finally { setVersionsLoading(false); }
+  }
+
+  async function restoreVersion(versionId: number) {
+    try {
+      const res = await fetch(`${API_BASE}/api/annotations/cases/${activeCaseId}/versions/${versionId}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json() as AnnotationVersion & {
+        annotations: AnnotationPoint[];
+        segmentations: SegmentationStroke[];
+      };
+      setAnnotations((data.annotations ?? []).map((a) => ({ ...a, caseId: activeCaseId })));
+      setSegmentations((data.segmentations ?? []).map((s) => ({ ...s, caseId: activeCaseId })));
+      setStatus(data.status);
+      setNotes(data.notes);
+      setShowHistory(false);
+      setSaveState("idle");
+    } catch { setSaveState("error"); }
+  }
+
   function startNewCase() {
     setAnnotations([]);
     setSegmentations([]);
@@ -228,6 +270,8 @@ export default function MedicalAnnotationDemoPage() {
     setNotes("");
     setSaveState("idle");
     setLoadError("");
+    setVersions([]);
+    setShowHistory(false);
     resetViewport();
     setView("editor");
   }
@@ -512,6 +556,7 @@ export default function MedicalAnnotationDemoPage() {
       if (!res.ok) throw new Error(await res.text());
       setSaveState("saved");
       void fetchCases();
+      void fetchVersions(activeCaseId);
       setTimeout(() => setView("list"), 1200);
     } catch {
       setSaveState("error");
@@ -1217,12 +1262,58 @@ export default function MedicalAnnotationDemoPage() {
                   <div className="grid gap-3">
                     <ActionButton icon={Save} label="Save to database" onClick={() => { void saveAnnotations(); }} loading={saveState === "saving"} />
                     <ActionButton icon={Database} label="Load from database" onClick={() => { void loadAnnotations(); }} loading={saveState === "loading"} />
+                    <ActionButton
+                      icon={Clock}
+                      label={showHistory ? "Hide history" : `History${versions.length ? ` (${versions.length})` : ""}`}
+                      onClick={() => setShowHistory((prev) => !prev)}
+                    />
                     <ActionButton icon={Download} label="Export JSON" onClick={exportJson} />
                     <ActionButton icon={Download} label="Export Slicer .mrk.json" onClick={exportSlicerMarkups} />
                     <ActionButton icon={Download} label="Export Segmentation Mask" onClick={exportSegmentationMask} />
                     <ActionButton icon={Download} label="Export Segmentation .nii.gz" onClick={exportSegmentationNifti} />
                     <ActionButton icon={RotateCcw} label="Clear case" onClick={resetCase} muted />
                   </div>
+
+                  {showHistory && (
+                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02]">
+                      <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Annotation history</p>
+                        {versionsLoading && <Loader2 size={13} className="animate-spin text-zinc-500" />}
+                      </div>
+                      {versions.length === 0 && !versionsLoading && (
+                        <p className="px-4 py-3 text-xs text-zinc-600">No saved versions yet.</p>
+                      )}
+                      <div className="divide-y divide-white/[0.04]">
+                        {versions.map((v) => (
+                          <div key={v.id} className="flex items-center gap-3 px-4 py-3">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-teal-300">v{v.version_number}</span>
+                                <span className={`rounded-full border px-1.5 py-0.5 text-[10px] font-semibold ${
+                                  v.status === "complete"
+                                    ? "border-teal-300/30 text-teal-300"
+                                    : v.status === "in-progress"
+                                      ? "border-yellow-300/30 text-yellow-300"
+                                      : "border-white/10 text-zinc-500"
+                                }`}>{v.status}</span>
+                              </div>
+                              <p className="mt-0.5 text-[10px] text-zinc-500">
+                                {new Date(v.created_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                {" · "}{v.annotation_count} marks · {v.segmentation_count} strokes
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => { void restoreVersion(v.id); }}
+                              className="shrink-0 rounded-full border border-teal-300/30 px-3 py-1 text-[10px] font-semibold text-teal-200 transition hover:bg-teal-300/10"
+                            >
+                              Restore
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {saveState !== "idle" && (
                     <div className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm ${

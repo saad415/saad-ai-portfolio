@@ -77,3 +77,17 @@ def create_tables() -> None:
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
         """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS annotation_versions (
+                id                   SERIAL      PRIMARY KEY,
+                case_id              TEXT        NOT NULL,
+                version_number       INT         NOT NULL,
+                status               TEXT        NOT NULL DEFAULT 'in-progress',
+                notes                TEXT        NOT NULL DEFAULT '',
+                annotations          JSONB       NOT NULL DEFAULT '[]',
+                segmentations        JSONB       NOT NULL DEFAULT '[]',
+                annotation_count     INT         NOT NULL DEFAULT 0,
+                segmentation_count   INT         NOT NULL DEFAULT 0,
+                created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+        """)
