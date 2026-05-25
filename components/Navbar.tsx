@@ -2,7 +2,7 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 z-50 w-full border-b border-white/[0.08] bg-[#070a0d]/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <a href="#" className="text-xl font-bold text-white">
+        <a href="/" className="text-xl font-bold text-white">
           Saad Ahmad
         </a>
 
