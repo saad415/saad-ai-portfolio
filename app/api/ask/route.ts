@@ -3,7 +3,7 @@ import { retrievePortfolioSources } from "@/lib/portfolio-knowledge";
 
 export const runtime = "nodejs";
 
-type OpenAIChatResponse = {
+type GroqChatResponse = {
   choices?: {
     message?: {
       content?: string;
@@ -55,24 +55,24 @@ export async function POST(request: Request) {
       excerpt: content,
     }));
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.GROQ_API_KEY) {
       return NextResponse.json(
         {
           answer:
-            "Portfolio AI is not configured yet. Add OPENAI_API_KEY to .env.local locally and to the Vercel project environment variables in production.",
+            "Portfolio AI is not configured yet. Add GROQ_API_KEY to .env.local locally and to the Vercel project environment variables in production.",
           sources: publicSources,
         },
         { status: 503 }
       );
     }
 
-    const model = process.env.OPENAI_ASK_MODEL ?? "gpt-4o-mini";
-    const openAIResponse = await fetch(
-      "https://api.openai.com/v1/chat/completions",
+    const model = process.env.GROQ_ASK_MODEL ?? "llama-3.1-8b-instant";
+    const groqResponse = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -95,9 +95,9 @@ export async function POST(request: Request) {
       }
     );
 
-    const payload = (await openAIResponse.json()) as OpenAIChatResponse;
+    const payload = (await groqResponse.json()) as GroqChatResponse;
 
-    if (!openAIResponse.ok) {
+    if (!groqResponse.ok) {
       return NextResponse.json(
         {
           error:
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
             "The portfolio assistant could not generate an answer.",
           sources: publicSources,
         },
-        { status: openAIResponse.status }
+        { status: groqResponse.status }
       );
     }
 

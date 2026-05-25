@@ -133,7 +133,7 @@ export default function AskPage() {
                 />
                 <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] px-3 pt-3">
                   <p className="hidden text-xs text-zinc-600 sm:block">
-                    Uses curated retrieval first, then OpenAI for the answer.
+                    Uses curated retrieval first, then Groq for the answer.
                   </p>
                   <button
                     type="submit"
