@@ -13,6 +13,16 @@ import type { Project }  from "@/components/ProjectsSection";
 // ── Add your real projects here ──
 const projects: Project[] = [
   {
+    title: "CampusRAG Inference Platform",
+    category: "AI Infrastructure",
+    categoryTag: "AI/ML",
+    description:
+      "Multi-tenant AI inference platform prototype with RAG chat, tenant-isolated document retrieval, usage accounting, request limits, Prometheus-style metrics, and a LiteLLM/vLLM-ready architecture.",
+    pipeline: ["Tenant Login", "Document Upload", "RAG Retrieval", "LLM Gateway", "Usage Accounting", "Metrics"],
+    tech: ["Next.js", "FastAPI", "RAG", "Docker", "SQLite", "ChromaDB", "Prometheus"],
+    href: "/projects/campusrag",
+  },
+  {
     title: "Medical MRI Annotation Platform",
     category: "Medical Imaging",
     categoryTag: "Full Stack",

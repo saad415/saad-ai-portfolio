@@ -8,6 +8,7 @@ const routes = [
   "/thesis/uterus",
   "/projects/spine-demo",
   "/projects/uterus-demo",
+  "/projects/campusrag",
   "/projects/spotify",
   "/projects/weather-deep-learning",
   "/projects/store-sales-excel",
