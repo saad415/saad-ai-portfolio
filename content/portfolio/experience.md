@@ -16,4 +16,4 @@ Saad worked as an AI Engineer at Sofitsians from April 2024 to February 2025. He
 
 He built and integrated RESTful APIs, RAG pipelines, and semantic search systems for AI-driven solutions. He also implemented AI workflow automation using prompt engineering, model integration, and frontend components.
 
-Earlier, Saad worked as an Android Developer at Sofitsians from November 2019 to January 2021. He developed native Android applications using Java, MVVM architecture, REST APIs, SQLite, XML layouts, Material Design, Retrofit, Git, and code review practices.
+Earlier, Saad worked as a Software Developer (.NET) at Sofitsians from November 2019 to January 2021. He developed and maintained full-stack web applications using C#, ASP.NET MVC, and SQL Server for enterprise-level business workflows. He designed and optimized relational database schemas, stored procedures, and complex SQL queries to improve application performance and data reliability. He also built and integrated REST APIs and backend services to support scalable frontend and third-party system integrations.

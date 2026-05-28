@@ -38,13 +38,13 @@ const experiences: Experience[] = [
   },
   {
     company: "Sofitsians",
-    role: "Android Developer",
+    role: "Software Developer (.NET)",
     period: "11/2019 - 01/2021",
     location: "Islamabad, Pakistan - On-site",
     bullets: [
-      "Developed native Android applications using Java, following MVVM architecture and integrating with RESTful APIs and SQLite databases.",
-      "Constructed scalable UI components using XML layouts following Material Design guidelines. Used Retrofit for API integration and SQLite for local database storage, improving app stability and data management.",
-      "Managed version control using Git and participated in code reviews, ensuring clean architecture and efficient collaboration across the development team.",
+      "Developed and maintained full-stack web applications using C#, ASP.NET MVC, and SQL Server for enterprise-level business workflows.",
+      "Designed and optimized relational database schemas, stored procedures, and complex SQL queries to improve application performance and data reliability.",
+      "Built and integrated REST APIs and backend services to support scalable frontend and third-party system integrations.",
     ],
   },
 ];

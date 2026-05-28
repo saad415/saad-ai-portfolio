@@ -22,7 +22,7 @@ export const portfolioKnowledge: PortfolioSource[] = [
     title: "Work Experience",
     url: "/#experience",
     content:
-      "Saad worked as a Research Assistant at Smart Imaging Lab, Universitatsklinikum Erlangen from 09/2025 to 03/2026, designing 3D U-Net models for lumbosacral vertebral landmark localization and uterine landmark detection in pelvic MRI. He validated models on multi-center, multi-vendor MRI datasets from 0.55T to 3T. He also worked as an AI Engineer at Sofitsians from 04/2024 to 02/2025, building AI applications with LLMs, OpenAI APIs, React.js, REST APIs, RAG pipelines, semantic search, prompt engineering, and frontend components. Earlier, he worked as an Android Developer using Java, MVVM, REST APIs, SQLite, Material Design, Retrofit, and Git.",
+      "Saad worked as a Research Assistant at Smart Imaging Lab, Universitatsklinikum Erlangen from 09/2025 to 03/2026, designing 3D U-Net models for lumbosacral vertebral landmark localization and uterine landmark detection in pelvic MRI. He validated models on multi-center, multi-vendor MRI datasets from 0.55T to 3T. He also worked as an AI Engineer at Sofitsians from 04/2024 to 02/2025, building AI applications with LLMs, OpenAI APIs, React.js, REST APIs, RAG pipelines, semantic search, prompt engineering, and frontend components. Earlier, he worked as a Software Developer (.NET) at Sofitsians from 11/2019 to 01/2021, developing and maintaining full-stack web applications with C#, ASP.NET MVC, SQL Server, relational schemas, stored procedures, complex SQL queries, REST APIs, backend services, frontend support, and third-party system integrations.",
   },
   {
     id: "skills",
