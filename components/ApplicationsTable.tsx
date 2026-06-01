@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ExternalLink, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { ExternalLink, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { ApplicationDeadlineInput, ApplicationPrioritySelect, ApplicationStatusSelect, ApplicationSubmitTodayToggle } from "@/components/ApplicationQuickFields";
 import ApplicationEditModal from "@/components/ApplicationEditModal";
 import { ApplicationRow } from "@/lib/tracker-db";
@@ -28,6 +28,14 @@ const PRIORITY_ORDER: Record<string, number> = {
 };
 
 const applicationsPerPage = 10;
+
+function getLocalDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
 
 function sortApplications(
   apps: ApplicationRow[],
@@ -69,6 +77,9 @@ export default function ApplicationsTable({ applications }: { applications: Appl
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showNotAppliedOnly, setShowNotAppliedOnly] = useState(false);
+  const [showDueTodayOnly, setShowDueTodayOnly] = useState(false);
+  const todayKey = getLocalDateKey(new Date());
 
   function handleSort(field: SortField) {
     if (sortField === field) {
@@ -86,15 +97,42 @@ export default function ApplicationsTable({ applications }: { applications: Appl
     setCurrentPage(1);
   }
 
+  const filteredApplications = applications.filter((application) => {
+    if (showNotAppliedOnly && application.status !== "Not Applied") {
+      return false;
+    }
+
+    if (showDueTodayOnly && application.deadline !== todayKey) {
+      return false;
+    }
+
+    return true;
+  });
   const sorted = sortField
-    ? sortApplications(applications, sortField, sortDir)
-    : sortTodayFirst(applications);
+    ? sortApplications(filteredApplications, sortField, sortDir)
+    : sortTodayFirst(filteredApplications);
   const totalPages = Math.max(1, Math.ceil(sorted.length / applicationsPerPage));
   const page = Math.min(currentPage, totalPages);
   const visibleApplications = useMemo(() => {
     const start = (page - 1) * applicationsPerPage;
     return sorted.slice(start, start + applicationsPerPage);
   }, [sorted, page]);
+  const shownStart = sorted.length ? (page - 1) * applicationsPerPage + 1 : 0;
+  const shownEnd = Math.min(page * applicationsPerPage, sorted.length);
+  const activeFilterLabel = showNotAppliedOnly && showDueTodayOnly
+    ? `${sorted.length} not applied due today of ${applications.length} total records`
+    : showNotAppliedOnly
+      ? `${sorted.length} not applied of ${applications.length} total records`
+      : showDueTodayOnly
+        ? `${sorted.length} due today of ${applications.length} total records`
+        : `${applications.length} total records`;
+  const emptyFilterLabel = showNotAppliedOnly && showDueTodayOnly
+    ? "No not applied positions due today found."
+    : showNotAppliedOnly
+      ? "No not applied positions found."
+      : showDueTodayOnly
+        ? "No positions due today found."
+        : "No applications found.";
 
   if (!applications.length) {
     return (
@@ -109,9 +147,65 @@ export default function ApplicationsTable({ applications }: { applications: Appl
 
   return (
     <div className="overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0b1014]/65">
-      <div className="border-b border-white/[0.08] p-6">
-        <h2 className="text-xl font-semibold">Tracked applications</h2>
-        <p className="mt-2 text-sm text-zinc-500">{applications.length} total records</p>
+      <div className="flex flex-col gap-5 border-b border-white/[0.08] p-6 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">Tracked applications</h2>
+          <p className="mt-2 text-sm text-zinc-500">
+            {activeFilterLabel}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex w-fit rounded-full border border-white/[0.1] bg-white/[0.025] p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setShowNotAppliedOnly(false);
+                setCurrentPage(1);
+              }}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                !showNotAppliedOnly
+                  ? "bg-teal-300 text-[#06100f]"
+                  : "text-zinc-400 hover:text-zinc-100"
+              }`}
+              aria-pressed={!showNotAppliedOnly}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowNotAppliedOnly(true);
+                setCurrentPage(1);
+              }}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                showNotAppliedOnly
+                  ? "bg-teal-300 text-[#06100f]"
+                  : "text-zinc-400 hover:text-zinc-100"
+              }`}
+              aria-pressed={showNotAppliedOnly}
+            >
+              Not Applied
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setShowDueTodayOnly((value) => !value);
+              setCurrentPage(1);
+            }}
+            className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+              showDueTodayOnly
+                ? "border-teal-300 bg-teal-300 text-[#06100f]"
+                : "border-white/[0.1] bg-white/[0.025] text-zinc-400 hover:text-zinc-100"
+            }`}
+            aria-pressed={showDueTodayOnly}
+          >
+            <CalendarDays size={15} />
+            Today
+          </button>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -147,17 +241,24 @@ export default function ApplicationsTable({ applications }: { applications: Appl
             </tr>
           </thead>
           <tbody>
-            {visibleApplications.map((application) => (
-              <ApplicationTableRow key={application.id} application={application} />
-            ))}
+            {visibleApplications.length ? (
+              visibleApplications.map((application) => (
+                <ApplicationTableRow key={application.id} application={application} />
+              ))
+            ) : (
+              <tr>
+                <td colSpan={8} className="px-5 py-10 text-center text-zinc-500">
+                  {emptyFilterLabel}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
       <div className="flex flex-col gap-3 border-t border-white/[0.08] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-zinc-500">
-          Showing {(page - 1) * applicationsPerPage + 1}-{Math.min(page * applicationsPerPage, sorted.length)} of{" "}
-          {sorted.length}
+          Showing {shownStart}-{shownEnd} of {sorted.length}
         </p>
         <div className="flex items-center gap-2">
           <button
