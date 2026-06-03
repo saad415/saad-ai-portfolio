@@ -4,11 +4,13 @@ import AddApplicationForm from "@/components/AddApplicationForm";
 import ApplicationsTable from "@/components/ApplicationsTable";
 import Navbar from "@/components/Navbar";
 import OpportunitiesPanel from "@/components/OpportunitiesPanel";
+import ProfessorContactsSection from "@/components/ProfessorContactsSection";
 import { SignInButton, SignOutButton } from "@/components/TrackerAuthButtons";
 import {
   isTrackerDatabaseConfigured,
   listApplications,
   listOpportunities,
+  listProfessorContacts,
 } from "@/lib/tracker-db";
 import {
   authOptions,
@@ -42,6 +44,9 @@ export default async function TrackerPage() {
     : [];
   const opportunities = isAllowed && isTrackerDatabaseConfigured
     ? await listOpportunities()
+    : [];
+  const professors = isAllowed && isTrackerDatabaseConfigured
+    ? await listProfessorContacts()
     : [];
 
   return (
@@ -88,6 +93,7 @@ export default async function TrackerPage() {
             <div className="flex flex-col gap-8">
               <AddApplicationForm />
               <ApplicationsTable applications={applications} />
+              <ProfessorContactsSection professors={professors} />
             </div>
           </div>
         )}

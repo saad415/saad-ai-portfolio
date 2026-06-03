@@ -31,6 +31,19 @@ export type ApplicationRow = {
   updated_at: string;
 };
 
+export type ProfessorContactStatus = "Not Emailed" | "Emailed" | "In Conversation";
+
+export type ProfessorContactRow = {
+  id: number;
+  professor_name: string;
+  university: string;
+  scholar_url: string | null;
+  contact_date: string | null;
+  status: ProfessorContactStatus;
+  created_at: string;
+  updated_at: string;
+};
+
 export type OpportunityStatus = "new" | "approved" | "rejected" | "archived";
 
 export type OpportunityRow = {
@@ -185,6 +198,30 @@ export async function ensureOpportunitiesTable() {
   `;
 }
 
+export async function ensureProfessorContactsTable() {
+  if (!sql) {
+    throw new Error("DATABASE_URL is not configured.");
+  }
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS professor_contacts (
+      id SERIAL PRIMARY KEY,
+      professor_name TEXT NOT NULL,
+      university TEXT NOT NULL,
+      scholar_url TEXT,
+      contact_date DATE,
+      status TEXT NOT NULL DEFAULT 'Not Emailed',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `;
+
+  await sql`
+    ALTER TABLE professor_contacts
+    ADD COLUMN IF NOT EXISTS contact_date DATE;
+  `;
+}
+
 export async function listApplications(): Promise<ApplicationRow[]> {
   if (!sql) {
     return [];
@@ -219,6 +256,37 @@ export async function listApplications(): Promise<ApplicationRow[]> {
   `;
 
   return rows as ApplicationRow[];
+}
+
+export async function listProfessorContacts(): Promise<ProfessorContactRow[]> {
+  if (!sql) {
+    return [];
+  }
+
+  await ensureProfessorContactsTable();
+
+  const rows = await sql`
+    SELECT
+      id,
+      professor_name,
+      university,
+      scholar_url,
+      contact_date::text,
+      status,
+      created_at::text,
+      updated_at::text
+    FROM professor_contacts
+    ORDER BY
+      CASE status
+        WHEN 'In Conversation' THEN 0
+        WHEN 'Not Emailed' THEN 1
+        WHEN 'Emailed' THEN 2
+        ELSE 3
+      END,
+      updated_at DESC;
+  `;
+
+  return rows as ProfessorContactRow[];
 }
 
 export async function listOpportunities(): Promise<OpportunityRow[]> {
@@ -453,6 +521,30 @@ export async function createApplication(formData: FormData) {
   `;
 }
 
+export async function createProfessorContact(formData: FormData) {
+  if (!sql) {
+    throw new Error("DATABASE_URL is not configured.");
+  }
+
+  await ensureProfessorContactsTable();
+
+  await sql`
+    INSERT INTO professor_contacts (
+      professor_name,
+      university,
+      scholar_url,
+      contact_date,
+      status
+    ) VALUES (
+      ${String(formData.get("professor_name") || "")},
+      ${String(formData.get("university") || "")},
+      ${nullableString(formData.get("scholar_url"))},
+      ${nullableString(formData.get("contact_date"))},
+      ${String(formData.get("status") || "Not Emailed")}
+    );
+  `;
+}
+
 export async function approveOpportunity(id: number) {
   if (!sql) {
     throw new Error("DATABASE_URL is not configured.");
@@ -586,6 +678,40 @@ export async function updateApplicationPriority(id: number, priority: string) {
   `;
 }
 
+export async function updateProfessorContactStatus(id: number, status: ProfessorContactStatus) {
+  if (!sql) {
+    throw new Error("DATABASE_URL is not configured.");
+  }
+
+  await ensureProfessorContactsTable();
+
+  await sql`
+    UPDATE professor_contacts
+    SET status = ${status}, updated_at = NOW()
+    WHERE id = ${id};
+  `;
+}
+
+export async function updateProfessorContact(id: number, formData: FormData) {
+  if (!sql) {
+    throw new Error("DATABASE_URL is not configured.");
+  }
+
+  await ensureProfessorContactsTable();
+
+  await sql`
+    UPDATE professor_contacts
+    SET
+      professor_name = ${String(formData.get("professor_name") || "")},
+      university = ${String(formData.get("university") || "")},
+      scholar_url = ${nullableString(formData.get("scholar_url"))},
+      contact_date = ${nullableString(formData.get("contact_date"))},
+      status = ${String(formData.get("status") || "Not Emailed")},
+      updated_at = NOW()
+    WHERE id = ${id};
+  `;
+}
+
 export async function updateOpportunityStatus(id: number, status: OpportunityStatus) {
   if (!sql) {
     throw new Error("DATABASE_URL is not configured.");
@@ -621,6 +747,15 @@ export async function deleteApplication(id: number) {
 
   await ensureApplicationsTable();
   await sql`DELETE FROM applications WHERE id = ${id};`;
+}
+
+export async function deleteProfessorContact(id: number) {
+  if (!sql) {
+    throw new Error("DATABASE_URL is not configured.");
+  }
+
+  await ensureProfessorContactsTable();
+  await sql`DELETE FROM professor_contacts WHERE id = ${id};`;
 }
 
 function nullableString(value: FormDataEntryValue | null) {

@@ -10,7 +10,9 @@ import {
 import {
   approveOpportunity,
   createApplication,
+  createProfessorContact,
   deleteApplication,
+  deleteProfessorContact,
   rejectAllNewOpportunities,
   saveDiscoveredOpportunities,
   updateApplication,
@@ -19,8 +21,11 @@ import {
   updateApplicationStatus,
   updateApplicationSubmitToday,
   updateOpportunityStatus,
+  updateProfessorContact,
+  updateProfessorContactStatus,
   ApplicationStatus,
   OpportunityStatus,
+  ProfessorContactStatus,
 } from "@/lib/tracker-db";
 
 const applicationStatuses: ApplicationStatus[] = [
@@ -36,6 +41,11 @@ const applicationStatuses: ApplicationStatus[] = [
 ];
 
 const priorities = ["Low", "Medium", "High"];
+const professorContactStatuses: ProfessorContactStatus[] = [
+  "Not Emailed",
+  "Emailed",
+  "In Conversation",
+];
 
 export type ApplicationAutofillData = {
   type?: string;
@@ -65,6 +75,25 @@ async function requireTrackerAccess() {
 export async function createApplicationAction(formData: FormData) {
   await requireTrackerAccess();
   await createApplication(formData);
+  revalidatePath("/tracker");
+}
+
+export async function createProfessorContactAction(formData: FormData) {
+  await requireTrackerAccess();
+
+  const professorName = String(formData.get("professor_name") || "").trim();
+  const university = String(formData.get("university") || "").trim();
+  const status = String(formData.get("status") || "Not Emailed") as ProfessorContactStatus;
+
+  if (!professorName || !university) {
+    throw new Error("Professor name and university are required.");
+  }
+
+  if (!professorContactStatuses.includes(status)) {
+    throw new Error("Invalid professor contact status.");
+  }
+
+  await createProfessorContact(formData);
   revalidatePath("/tracker");
 }
 
@@ -175,6 +204,61 @@ export async function updateApplicationSubmitTodayAction(formData: FormData) {
   }
 
   await updateApplicationSubmitToday(id, submitToday);
+  revalidatePath("/tracker");
+}
+
+export async function updateProfessorContactStatusAction(formData: FormData) {
+  await requireTrackerAccess();
+
+  const id = Number(formData.get("id"));
+  const status = String(formData.get("status")) as ProfessorContactStatus;
+
+  if (!Number.isInteger(id)) {
+    throw new Error("Invalid professor contact id.");
+  }
+
+  if (!professorContactStatuses.includes(status)) {
+    throw new Error("Invalid professor contact status.");
+  }
+
+  await updateProfessorContactStatus(id, status);
+  revalidatePath("/tracker");
+}
+
+export async function updateProfessorContactAction(formData: FormData) {
+  await requireTrackerAccess();
+
+  const id = Number(formData.get("id"));
+  const professorName = String(formData.get("professor_name") || "").trim();
+  const university = String(formData.get("university") || "").trim();
+  const status = String(formData.get("status") || "Not Emailed") as ProfessorContactStatus;
+
+  if (!Number.isInteger(id)) {
+    throw new Error("Invalid professor contact id.");
+  }
+
+  if (!professorName || !university) {
+    throw new Error("Professor name and university are required.");
+  }
+
+  if (!professorContactStatuses.includes(status)) {
+    throw new Error("Invalid professor contact status.");
+  }
+
+  await updateProfessorContact(id, formData);
+  revalidatePath("/tracker");
+}
+
+export async function deleteProfessorContactAction(formData: FormData) {
+  await requireTrackerAccess();
+
+  const id = Number(formData.get("id"));
+
+  if (!Number.isInteger(id)) {
+    throw new Error("Invalid professor contact id.");
+  }
+
+  await deleteProfessorContact(id);
   revalidatePath("/tracker");
 }
 
