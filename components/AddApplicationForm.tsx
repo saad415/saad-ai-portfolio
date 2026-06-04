@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
-import { Loader2, Plus, WandSparkles } from "lucide-react";
+import { AlertCircle, Loader2, Plus, WandSparkles } from "lucide-react";
 import {
   ApplicationAutofillData,
   autofillApplicationFromUrlAction,
@@ -38,7 +38,10 @@ type ApplicationFormState = {
   contact_name: string;
   contact_email: string;
   notes: string;
+  submit_today: boolean;
 };
+
+type TextApplicationField = Exclude<keyof ApplicationFormState, "submit_today">;
 
 const initialFormState: ApplicationFormState = {
   type: "university",
@@ -54,6 +57,7 @@ const initialFormState: ApplicationFormState = {
   contact_name: "",
   contact_email: "",
   notes: "",
+  submit_today: false,
 };
 
 export default function AddApplicationForm() {
@@ -61,8 +65,12 @@ export default function AddApplicationForm() {
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  function updateField(name: keyof ApplicationFormState, value: string) {
+  function updateField(name: TextApplicationField, value: string) {
     setForm((current) => ({ ...current, [name]: value }));
+  }
+
+  function updateUrgent(value: boolean) {
+    setForm((current) => ({ ...current, submit_today: value }));
   }
 
   function applyAutofill(data: ApplicationAutofillData) {
@@ -134,6 +142,8 @@ export default function AddApplicationForm() {
         <p className="mt-3 text-sm text-zinc-400">{message}</p>
       )}
 
+      <input type="hidden" name="submit_today" value={form.submit_today ? "true" : "false"} />
+
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Field label="Type">
           <select name="type" className={inputClass} value={form.type} onChange={(event) => updateField("type", event.target.value)}>
@@ -167,6 +177,21 @@ export default function AddApplicationForm() {
           <select name="priority" className={inputClass} value={form.priority} onChange={(event) => updateField("priority", event.target.value)}>
             {priorities.map((priority) => <option key={priority}>{priority}</option>)}
           </select>
+        </Field>
+        <Field label="Urgent">
+          <button
+            type="button"
+            onClick={() => updateUrgent(!form.submit_today)}
+            className={`inline-flex h-[46px] w-fit items-center gap-2 rounded-full border px-4 text-sm font-semibold transition ${
+              form.submit_today
+                ? "border-red-300/50 bg-red-400/15 text-red-100 shadow-[0_0_20px_rgba(248,113,113,0.14)]"
+                : "border-white/[0.1] bg-white/[0.02] text-zinc-300 hover:border-red-300/50 hover:bg-red-400/10 hover:text-red-100"
+            }`}
+            aria-pressed={form.submit_today}
+          >
+            <AlertCircle size={16} />
+            Urgent
+          </button>
         </Field>
         <Field label="Contact Name">
           <input name="contact_name" className={inputClass} placeholder="Recruiter or professor" value={form.contact_name} onChange={(event) => updateField("contact_name", event.target.value)} />

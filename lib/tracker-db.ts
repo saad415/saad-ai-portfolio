@@ -500,6 +500,7 @@ export async function createApplication(formData: FormData) {
       date_applied,
       status,
       priority,
+      submit_today,
       contact_name,
       contact_email,
       notes
@@ -514,6 +515,7 @@ export async function createApplication(formData: FormData) {
       ${nullableString(formData.get("date_applied"))},
       ${String(formData.get("status") || "Not Applied")},
       ${String(formData.get("priority") || "Medium")},
+      ${formData.get("submit_today") === "true"},
       ${nullableString(formData.get("contact_name"))},
       ${nullableString(formData.get("contact_email"))},
       ${nullableString(formData.get("notes"))}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ExternalLink, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
+import { ExternalLink, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, CalendarDays, Search } from "lucide-react";
 import { ApplicationDeadlineInput, ApplicationPrioritySelect, ApplicationStatusSelect, ApplicationSubmitTodayToggle } from "@/components/ApplicationQuickFields";
 import ApplicationEditModal from "@/components/ApplicationEditModal";
 import { ApplicationRow } from "@/lib/tracker-db";
@@ -66,6 +66,32 @@ function sortTodayFirst(apps: ApplicationRow[]) {
   return [...apps].sort((a, b) => Number(b.submit_today) - Number(a.submit_today));
 }
 
+function matchesSearch(application: ApplicationRow, query: string) {
+  if (!query) {
+    return true;
+  }
+
+  const haystack = [
+    application.organization,
+    application.title,
+    application.type,
+    application.city,
+    application.country,
+    application.status,
+    application.priority,
+    application.deadline,
+    application.date_applied,
+    application.contact_name,
+    application.contact_email,
+    application.notes,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return haystack.includes(query);
+}
+
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
   if (!active) return <ChevronsUpDown size={13} className="ml-1 inline opacity-30" />;
   return dir === "asc"
@@ -79,7 +105,10 @@ export default function ApplicationsTable({ applications }: { applications: Appl
   const [currentPage, setCurrentPage] = useState(1);
   const [showNotAppliedOnly, setShowNotAppliedOnly] = useState(false);
   const [showDueTodayOnly, setShowDueTodayOnly] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [deadlineFilter, setDeadlineFilter] = useState("");
   const todayKey = getLocalDateKey(new Date());
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
 
   function handleSort(field: SortField) {
     if (sortField === field) {
@@ -98,11 +127,19 @@ export default function ApplicationsTable({ applications }: { applications: Appl
   }
 
   const filteredApplications = applications.filter((application) => {
+    if (!matchesSearch(application, normalizedSearchQuery)) {
+      return false;
+    }
+
     if (showNotAppliedOnly && application.status !== "Not Applied") {
       return false;
     }
 
     if (showDueTodayOnly && application.deadline !== todayKey) {
+      return false;
+    }
+
+    if (deadlineFilter && application.deadline !== deadlineFilter) {
       return false;
     }
 
@@ -119,20 +156,19 @@ export default function ApplicationsTable({ applications }: { applications: Appl
   }, [sorted, page]);
   const shownStart = sorted.length ? (page - 1) * applicationsPerPage + 1 : 0;
   const shownEnd = Math.min(page * applicationsPerPage, sorted.length);
-  const activeFilterLabel = showNotAppliedOnly && showDueTodayOnly
-    ? `${sorted.length} not applied due today of ${applications.length} total records`
-    : showNotAppliedOnly
-      ? `${sorted.length} not applied of ${applications.length} total records`
-      : showDueTodayOnly
-        ? `${sorted.length} due today of ${applications.length} total records`
-        : `${applications.length} total records`;
+  const hasActiveFilters = showNotAppliedOnly || showDueTodayOnly || Boolean(deadlineFilter) || Boolean(normalizedSearchQuery);
+  const activeFilterLabel = hasActiveFilters
+    ? `${sorted.length} shown of ${applications.length} total records`
+    : `${applications.length} total records`;
   const emptyFilterLabel = showNotAppliedOnly && showDueTodayOnly
     ? "No not applied positions due today found."
     : showNotAppliedOnly
       ? "No not applied positions found."
       : showDueTodayOnly
         ? "No positions due today found."
-        : "No applications found.";
+        : normalizedSearchQuery
+          ? "No applications match your search."
+          : "No applications found.";
 
   if (!applications.length) {
     return (
@@ -155,7 +191,25 @@ export default function ApplicationsTable({ applications }: { applications: Appl
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <label className="relative w-full sm:w-72">
+            <Search
+              size={16}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
+            />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Search applications"
+              className="h-12 w-full rounded-full border border-white/[0.1] bg-white/[0.025] pl-11 pr-4 text-sm font-medium text-white outline-none transition placeholder:text-zinc-600 focus:border-teal-300/60"
+              aria-label="Search applications"
+            />
+          </label>
+
           <div className="inline-flex w-fit rounded-full border border-white/[0.1] bg-white/[0.025] p-1">
             <button
               type="button"
@@ -193,6 +247,7 @@ export default function ApplicationsTable({ applications }: { applications: Appl
             type="button"
             onClick={() => {
               setShowDueTodayOnly((value) => !value);
+              setDeadlineFilter("");
               setCurrentPage(1);
             }}
             className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
@@ -205,6 +260,22 @@ export default function ApplicationsTable({ applications }: { applications: Appl
             <CalendarDays size={15} />
             Today
           </button>
+
+          <label className="relative w-full sm:w-44">
+            <input
+              type="date"
+              value={deadlineFilter}
+              onChange={(event) => {
+                setDeadlineFilter(event.target.value);
+                if (event.target.value) {
+                  setShowDueTodayOnly(false);
+                }
+                setCurrentPage(1);
+              }}
+              className="h-12 w-full rounded-full border border-white/[0.1] bg-white/[0.025] px-4 text-sm font-semibold text-zinc-200 outline-none transition [color-scheme:dark] focus:border-teal-300/60"
+              aria-label="Filter applications by deadline"
+            />
+          </label>
         </div>
       </div>
 
