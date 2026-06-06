@@ -33,6 +33,16 @@ const projects: Project[] = [
     href: "/projects/medical-annotation",
   },
   {
+    title: "Topology-Aware Microstructure Platform",
+    category: "Materials AI",
+    categoryTag: "Research",
+    description:
+      "Interactive descriptor platform for synthetic two-phase microstructures with morphology metrics, Betti curves, 0D persistence pairs, and parameter sweeps for structure-property analysis.",
+    pipeline: ["Field Generation", "Thresholding", "Morphology", "Betti Curves", "Persistence", "Descriptor Dashboard"],
+    tech: ["TypeScript", "Topology", "Persistent Homology", "Microstructures", "TDA"],
+    href: "/projects/microstructure-topology",
+  },
+  {
     title: "Portfolio Website",
     category: "Full Stack",
     categoryTag: "Full Stack",
