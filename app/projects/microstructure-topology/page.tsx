@@ -1561,6 +1561,7 @@ export default function MicrostructureTopologyProjectPage() {
   const [objective, setObjective] = useState<Objective>("transport");
   const [uploadedVolume, setUploadedVolume] = useState<Volume | null>(null);
   const [uploadMessage, setUploadMessage] = useState("");
+  const [rawDims, setRawDims] = useState<[number, number, number]>([34, 34, 34]);
 
   const { seed, correlation, threshold, anisotropy, noise } = applied;
 
@@ -1586,17 +1587,68 @@ export default function MicrostructureTopologyProjectPage() {
     if (!file) return;
 
     try {
-      const parsed = parseUploadedVolume(JSON.parse(await file.text()));
-      if (!parsed) {
-        setUploadMessage("Upload a volumetric field with dims [x,y,z] and a flat values array.");
-        return;
+      if (file.name.endsWith(".raw") || file.name.endsWith(".bin")) {
+        // Raw float32 binary — dims come from the rawDims state
+        const buffer = await file.arrayBuffer();
+        const values = new Float32Array(buffer);
+        const expected = rawDims[0] * rawDims[1] * rawDims[2];
+        if (values.length !== expected) {
+          setUploadMessage(
+            `Dimension mismatch: file has ${values.length} values but ${rawDims.join("×")} = ${expected} expected. Adjust the dims fields above.`
+          );
+          return;
+        }
+        // Normalize to [0,1] if not already
+        let min = Infinity, max = -Infinity;
+        for (let i = 0; i < values.length; i++) { if (values[i] < min) min = values[i]; if (values[i] > max) max = values[i]; }
+        const range = max - min || 1;
+        const norm = new Float32Array(values.length);
+        for (let i = 0; i < values.length; i++) norm[i] = (values[i] - min) / range;
+        setUploadedVolume({ dims: rawDims, values: norm });
+        // Auto-restore threshold from filename e.g. microstructure_34x34x34_t048.raw → 0.48
+        const tMatch = file.name.match(/_t(\d{3})\.raw$/);
+        if (tMatch) {
+          const restoredThreshold = parseInt(tMatch[1]) / 100;
+          setApplied((a) => ({ ...a, threshold: restoredThreshold }));
+          setPending((p) => ({ ...p, threshold: restoredThreshold }));
+        }
+        setUploadMessage(
+          `Loaded ${rawDims.join(" × ")} raw float32 volume (${(buffer.byteLength / 1024).toFixed(1)} KB).` +
+          (tMatch ? ` Threshold auto-restored to ${(parseInt(tMatch[1]) / 100).toFixed(2)}.` : "")
+        );
+      } else {
+        // JSON fallback
+        const parsed = parseUploadedVolume(JSON.parse(await file.text()));
+        if (!parsed) {
+          setUploadMessage("Upload a volumetric field with dims [x,y,z] and a flat values array.");
+          return;
+        }
+        setUploadedVolume(parsed);
+        setUploadMessage(`Loaded ${parsed.dims.join(" × ")} volumetric microstructure field.`);
       }
-
-      setUploadedVolume(parsed);
-      setUploadMessage(`Loaded ${parsed.dims.join(" x ")} volumetric microstructure field.`);
     } catch {
-      setUploadMessage("Could not read this volumetric field.");
+      setUploadMessage("Could not read this file.");
     }
+  }
+
+  function handleExportRaw() {
+    const { dims, values } = volume;
+    const buffer = new ArrayBuffer(values.length * 4);
+    const view = new Float32Array(buffer);
+    view.set(values);
+    const blob = new Blob([buffer], { type: "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    // Encode the applied threshold in the filename so re-upload produces identical results.
+    const tStr = threshold.toFixed(2).replace(".", "");
+    a.download = `microstructure_${dims.join("x")}_t${tStr}.raw`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setUploadMessage(
+      `Exported ${dims.join("×")} float32 field at threshold ${threshold.toFixed(2)}. ` +
+      `To reproduce identical descriptors on re-upload, keep threshold at ${threshold.toFixed(2)}.`
+    );
   }
 
   const descriptors = [
@@ -1693,13 +1745,44 @@ export default function MicrostructureTopologyProjectPage() {
             </button>
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-teal-300/60 hover:text-teal-200">
               <FileUp size={15} />
-              Upload volumetric field
-              <input type="file" accept="application/json,.json" className="hidden" onChange={handleUpload} />
+              Upload .raw / .json
+              <input type="file" accept=".raw,.bin,.json,application/json,application/octet-stream" className="hidden" onChange={handleUpload} />
             </label>
+            <button
+              onClick={handleExportRaw}
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-violet-400/60 hover:text-violet-300"
+            >
+              ↓ Export .raw
+            </button>
+          </div>
+
+          {/* Dims helper shown for .raw uploads */}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <span className="text-xs text-zinc-500">Raw file dims:</span>
+            {([0, 1, 2] as const).map((i) => {
+              const label = ["Nx", "Ny", "Nz"][i];
+              return (
+                <label key={label} className="flex items-center gap-1.5 text-xs text-zinc-400">
+                  {label}
+                  <input
+                    type="number"
+                    min={2}
+                    max={256}
+                    value={rawDims[i]}
+                    onChange={(e) => {
+                      const v = Math.max(2, Math.min(256, Number(e.target.value) || 34));
+                      setRawDims((d) => { const next = [...d] as [number, number, number]; next[i] = v; return next; });
+                    }}
+                    className="w-16 rounded border border-white/10 bg-zinc-900 px-2 py-0.5 font-mono text-zinc-200 focus:outline-none focus:ring-1 focus:ring-teal-400"
+                  />
+                </label>
+              );
+            })}
+            <span className="text-xs text-zinc-600">(only needed for .raw uploads)</span>
           </div>
 
           {uploadMessage && (
-            <p className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3 text-sm text-zinc-400">
+            <p className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-3 text-sm text-zinc-400">
               {uploadMessage}
             </p>
           )}
