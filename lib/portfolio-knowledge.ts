@@ -50,7 +50,7 @@ export const portfolioKnowledge: PortfolioSource[] = [
     title: "Publication",
     url: "/#publications",
     content:
-      "Saad is a co-author on 'Real-Time Automated Analysis and Reporting of Uterine Volumetry, Biometry, and Incidental Findings in Female Pelvic MRI', submitted to IEEE Transactions on Medical Imaging in 2025. Authors include Bhatia D., Ahmad S., Tripathy S., Bustos Vivas M.C., Kratzsch L., Knupfer A., Aviles Verdera J., and Hutter J.",
+      "Saad is a co-author on 'Female-RHINO: A Real-Time Scanner-Integrated Framework for Automated Quantitative Uterine MRI Analysis and Structured Reporting', published in IEEE Journal of Biomedical and Health Informatics in 2026. Authors include Deepak Bhatia, Saad Ahmad, Smiti Tripathy, Maria Camila Bustos Vivas, Lieselotte Kratzsch, Anika Knupfer, Jordina Aviles Verdera, Susanne Schulz-Heise, Matthias May, and Jana Hutter.",
   },
   {
     id: "medical-annotation-platform",

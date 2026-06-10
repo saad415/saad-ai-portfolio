@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   CalendarDays,
   Check,
@@ -31,6 +31,8 @@ type DailyTask = {
 const storageKey = "portfolio-daily-tasks-v1";
 const statusOptions: StatusFilter[] = ["All", "Todo", "In Progress", "Done"];
 const priorityOptions: TaskPriority[] = ["High", "Medium", "Low"];
+const hourOptions = Array.from({ length: 25 }, (_, index) => index);
+const minuteOptions = Array.from({ length: 60 }, (_, index) => index);
 
 function getLocalDateKey(date: Date) {
   const year = date.getFullYear();
@@ -145,6 +147,12 @@ export default function DailyTaskTracker() {
   const completedTasks = dayTasks.filter((task) => task.status === "Done").length;
   const plannedMinutes = dayTasks.reduce((total, task) => total + task.durationMinutes, 0);
   const focusedSeconds = dayTasks.reduce((total, task) => total + task.elapsedSeconds, 0);
+  const durationHours = Math.floor(durationMinutes / 60);
+  const durationRemainderMinutes = durationMinutes % 60;
+
+  function updateDuration(hours: number, minutes: number) {
+    setDurationMinutes(Math.max(1, hours * 60 + minutes));
+  }
 
   function handleAddTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -219,27 +227,35 @@ export default function DailyTaskTracker() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label>
               <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Duration</span>
-              <input
-                type="number"
-                min={1}
-                max={480}
-                value={durationMinutes}
-                onChange={(event) => setDurationMinutes(Number(event.target.value))}
-                className="mt-2 h-12 w-full rounded-2xl border border-white/[0.1] bg-white/[0.025] px-4 text-sm font-semibold text-white outline-none transition focus:border-teal-300/60"
-              />
+              <div className="mt-2 grid grid-cols-2 gap-1.5">
+                <ScrollPicker
+                  label="Hours"
+                  value={durationHours}
+                  options={hourOptions}
+                  format={(value) => `${value} hr`}
+                  onChange={(value) => updateDuration(value, durationRemainderMinutes)}
+                />
+                <ScrollPicker
+                  label="Minutes"
+                  value={durationRemainderMinutes}
+                  options={minuteOptions}
+                  format={(value) => `${value} min`}
+                  onChange={(value) => updateDuration(durationHours, value)}
+                />
+              </div>
             </label>
 
             <label>
               <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Priority</span>
-              <select
-                value={priority}
-                onChange={(event) => setPriority(event.target.value as TaskPriority)}
-                className="mt-2 h-12 w-full rounded-2xl border border-white/[0.1] bg-white/[0.025] px-4 text-sm font-semibold text-white outline-none transition [color-scheme:dark] focus:border-teal-300/60"
-              >
-                {priorityOptions.map((option) => (
-                  <option key={option}>{option}</option>
-                ))}
-              </select>
+              <div className="mt-2">
+                <ScrollPicker
+                  label="Priority"
+                  value={priority}
+                  options={priorityOptions}
+                  format={(value) => value}
+                  onChange={(value) => setPriority(value)}
+                />
+              </div>
             </label>
           </div>
 
@@ -356,6 +372,48 @@ function Metric({ label, value }: { label: string; value: string }) {
       <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{label}</p>
       <p className="mt-3 text-2xl font-semibold text-white">{value}</p>
     </div>
+  );
+}
+
+function ScrollPicker<T extends string | number>({
+  label,
+  value,
+  options,
+  format,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: T[];
+  format: (value: T) => string;
+  onChange: (value: T) => void;
+}) {
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+
+  return (
+    <details ref={detailsRef} className="group relative">
+      <summary className="flex cursor-pointer list-none flex-col items-center justify-center gap-0.5 rounded-2xl border border-white/[0.1] bg-white/[0.025] px-4 py-2.5 outline-none transition marker:hidden hover:border-white/20 focus:border-teal-300/60 group-open:border-teal-300/50 group-open:bg-teal-300/[0.04] [&::-webkit-details-marker]:hidden">
+        <span className="text-xl font-bold leading-none text-white">{format(value)}</span>
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">{label}</span>
+      </summary>
+      <div className="absolute left-0 top-[calc(100%+6px)] z-20 max-h-52 w-full overflow-y-auto rounded-2xl border border-white/[0.1] bg-[#070a0d] p-1 shadow-2xl shadow-black/60 [scrollbar-color:rgba(45,212,191,0.4)_transparent] [scrollbar-width:thin]">
+        {options.map((option) => (
+          <button
+            key={option}
+            type="button"
+            onClick={() => {
+              onChange(option);
+              if (detailsRef.current) detailsRef.current.open = false;
+            }}
+            className={`block w-full rounded-xl px-3 py-2 text-center text-sm font-semibold transition hover:bg-teal-300/10 hover:text-teal-100 ${
+              option === value ? "bg-teal-300/10 text-teal-300" : "text-zinc-400"
+            }`}
+          >
+            {format(option)}
+          </button>
+        ))}
+      </div>
+    </details>
   );
 }
 

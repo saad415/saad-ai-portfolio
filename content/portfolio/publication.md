@@ -4,8 +4,8 @@ title: Publication
 url: /#publications
 ---
 
-Saad is a co-author on "Real-Time Automated Analysis and Reporting of Uterine Volumetry, Biometry, and Incidental Findings in Female Pelvic MRI", submitted to IEEE Transactions on Medical Imaging in 2025.
+Saad is a co-author on "Female-RHINO: A Real-Time Scanner-Integrated Framework for Automated Quantitative Uterine MRI Analysis and Structured Reporting", published in IEEE Journal of Biomedical and Health Informatics in 2026.
 
-Authors include Bhatia D., Ahmad S., Tripathy S., Bustos Vivas M.C., Kratzsch L., Knupfer A., Aviles Verdera J., and Hutter J.
+Authors include Deepak Bhatia, Saad Ahmad, Smiti Tripathy, Maria Camila Bustos Vivas, Lieselotte Kratzsch, Anika Knupfer, Jordina Aviles Verdera, Susanne Schulz-Heise, Matthias May, and Jana Hutter.
 
-The publication connects to Saad's uterine MRI work, automated landmark detection, volumetry, biometry, and real-time medical imaging reporting.
+The publication connects to Saad's uterine MRI work, automated landmark detection, volumetry, biometry, real-time scanner-integrated analysis, and structured medical imaging reporting.
