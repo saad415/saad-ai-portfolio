@@ -33,6 +33,16 @@ const projects: Project[] = [
     href: "/projects/medical-annotation",
   },
   {
+    title: "Prostate MRI Radiomics — Ambiguity Detection",
+    category: "Medical AI",
+    categoryTag: "Research",
+    description:
+      "XGBoost classifier trained on ADC radiomic features (GLCM, shape, first-order) from the Prostate158 dataset to predict inter-reader ADC tumour delineation disagreement. Features and label share the same ADC modality — no circular label.",
+    pipeline: ["ADC MRI", "ADC Radiomics", "Feature Selection", "XGBoost", "Inter-reader Dice", "Inference"],
+    tech: ["Python", "XGBoost", "scikit-learn", "nibabel", "NIfTI", "PyRadiomics"],
+    href: "/projects/prostate-radiomics",
+  },
+  {
     title: "Topology-Aware Microstructure Platform",
     category: "Materials AI",
     categoryTag: "Research",
