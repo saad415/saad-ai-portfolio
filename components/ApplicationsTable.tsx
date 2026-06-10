@@ -8,6 +8,7 @@ import { ApplicationRow } from "@/lib/tracker-db";
 
 type SortField = "status" | "deadline" | "priority";
 type SortDir = "asc" | "desc";
+type StatusFilter = "All" | "Not Applied" | "Applied";
 
 const STATUS_ORDER: Record<string, number> = {
   "Not Applied": 0,
@@ -103,7 +104,7 @@ export default function ApplicationsTable({ applications }: { applications: Appl
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [currentPage, setCurrentPage] = useState(1);
-  const [showNotAppliedOnly, setShowNotAppliedOnly] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
   const [showDueTodayOnly, setShowDueTodayOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [deadlineFilter, setDeadlineFilter] = useState("");
@@ -131,7 +132,7 @@ export default function ApplicationsTable({ applications }: { applications: Appl
       return false;
     }
 
-    if (showNotAppliedOnly && application.status !== "Not Applied") {
+    if (statusFilter !== "All" && application.status !== statusFilter) {
       return false;
     }
 
@@ -156,14 +157,14 @@ export default function ApplicationsTable({ applications }: { applications: Appl
   }, [sorted, page]);
   const shownStart = sorted.length ? (page - 1) * applicationsPerPage + 1 : 0;
   const shownEnd = Math.min(page * applicationsPerPage, sorted.length);
-  const hasActiveFilters = showNotAppliedOnly || showDueTodayOnly || Boolean(deadlineFilter) || Boolean(normalizedSearchQuery);
+  const hasActiveFilters = statusFilter !== "All" || showDueTodayOnly || Boolean(deadlineFilter) || Boolean(normalizedSearchQuery);
   const activeFilterLabel = hasActiveFilters
     ? `${sorted.length} shown of ${applications.length} total records`
     : `${applications.length} total records`;
-  const emptyFilterLabel = showNotAppliedOnly && showDueTodayOnly
-    ? "No not applied positions due today found."
-    : showNotAppliedOnly
-      ? "No not applied positions found."
+  const emptyFilterLabel = statusFilter !== "All" && showDueTodayOnly
+    ? `No ${statusFilter.toLowerCase()} positions due today found.`
+    : statusFilter !== "All"
+      ? `No ${statusFilter.toLowerCase()} positions found.`
       : showDueTodayOnly
         ? "No positions due today found."
         : normalizedSearchQuery
@@ -214,32 +215,47 @@ export default function ApplicationsTable({ applications }: { applications: Appl
             <button
               type="button"
               onClick={() => {
-                setShowNotAppliedOnly(false);
+                setStatusFilter("All");
                 setCurrentPage(1);
               }}
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                !showNotAppliedOnly
+                statusFilter === "All"
                   ? "bg-teal-300 text-[#06100f]"
                   : "text-zinc-400 hover:text-zinc-100"
               }`}
-              aria-pressed={!showNotAppliedOnly}
+              aria-pressed={statusFilter === "All"}
             >
               All
             </button>
             <button
               type="button"
               onClick={() => {
-                setShowNotAppliedOnly(true);
+                setStatusFilter("Not Applied");
                 setCurrentPage(1);
               }}
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                showNotAppliedOnly
+                statusFilter === "Not Applied"
                   ? "bg-teal-300 text-[#06100f]"
                   : "text-zinc-400 hover:text-zinc-100"
               }`}
-              aria-pressed={showNotAppliedOnly}
+              aria-pressed={statusFilter === "Not Applied"}
             >
               Not Applied
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter("Applied");
+                setCurrentPage(1);
+              }}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                statusFilter === "Applied"
+                  ? "bg-teal-300 text-[#06100f]"
+                  : "text-zinc-400 hover:text-zinc-100"
+              }`}
+              aria-pressed={statusFilter === "Applied"}
+            >
+              Applied
             </button>
           </div>
 
