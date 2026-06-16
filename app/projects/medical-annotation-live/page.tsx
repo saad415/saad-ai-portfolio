@@ -84,6 +84,7 @@ type VolumeInfo = {
   pixDims: number[];
   affine: number[][];
   fileName: string;
+  caseKey: string;
 };
 
 async function fetchCasesWithRetry(attempts = 4): Promise<SavedCase[]> {
@@ -107,6 +108,24 @@ async function fetchCasesWithRetry(attempts = 4): Promise<SavedCase[]> {
 
 function sleep(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function anonymizedCaseLabel(index: number) {
+  return `Demo MRI Case ${String(index + 1).padStart(2, "0")}`;
+}
+
+function createAnonymizedCaseKey() {
+  return `demo-mri-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function niftiExtension(fileName: string) {
+  return fileName.toLowerCase().endsWith(".nii.gz") ? ".nii.gz" : ".nii";
+}
+
+function sanitizeDemoText(text: string) {
+  return text
+    .replace(/\b[\w.-]+\.nii(?:\.gz)?\b/gi, "anonymized MRI volume")
+    .replace(/\buploaded-[\w.-]+/gi, "anonymized-demo-case");
 }
 
 const LABEL_STYLES: Record<Label, { name: string; color: string; bg: string }> = {
@@ -162,7 +181,7 @@ export default function MedicalAnnotationDemoPage() {
   const [view, setView] = useState<"list" | "editor">("list");
 
   const activeCaseId = volumeInfo
-    ? `uploaded-${volumeInfo.fileName}`
+    ? volumeInfo.caseKey
     : (typeof window !== "undefined" && localStorage.getItem("last-case-id")) || "uploaded-demo";
   const maxSlice = getMaxSlice(volumeInfo, activePlane);
   const activeSlice = Math.min(slice, maxSlice);
@@ -176,28 +195,29 @@ export default function MedicalAnnotationDemoPage() {
   const caseSegmentations = segmentations.filter((stroke) => stroke.caseId === activeCaseId);
   const selectedAnnotation = annotations.find((point) => point.id === selectedAnnotationId) ?? null;
   const selectedSegmentation = segmentations.find((stroke) => stroke.id === selectedSegmentationId) ?? null;
+  const publicCaseLabel = volumeInfo?.fileName ?? "Anonymized MRI Case";
   const exportPayload = useMemo(() => ({
-    caseId: activeCaseId,
+    caseId: publicCaseLabel,
     modality: "Uploaded NIfTI MRI",
     region: "User-uploaded volume",
     volume: volumeInfo ? { fileName: volumeInfo.fileName, dims: volumeInfo.dims } : null,
     status,
-    notes,
+    notes: sanitizeDemoText(notes),
     annotationCount: caseAnnotations.length,
     segmentationStrokeCount: caseSegmentations.length,
     labels: summarizeLabels(caseAnnotations),
     segmentationLabels: summarizeSegmentation(caseSegmentations),
-    annotations: caseAnnotations,
+    annotations: caseAnnotations.map((point) => ({ ...point, caseId: publicCaseLabel })),
     segmentation: {
       representation: "brush-stroke mask overlay",
-      strokes: caseSegmentations,
+      strokes: caseSegmentations.map((stroke) => ({ ...stroke, caseId: publicCaseLabel })),
     },
     backendContract: {
       save: "POST /annotations/:caseId",
       load: "GET /annotations/:caseId",
       export: "GET /annotations/:caseId/export",
     },
-  }), [activeCaseId, caseAnnotations, caseSegmentations, notes, status, volumeInfo]);
+  }), [caseAnnotations, caseSegmentations, notes, publicCaseLabel, status, volumeInfo]);
 
   useEffect(() => {
     if (!volumeInfo || !canvasRef.current) return;
@@ -232,14 +252,15 @@ export default function MedicalAnnotationDemoPage() {
       setAnnotations(data.annotations.map((a) => ({ ...a, caseId: c.id })));
       setSegmentations(data.segmentations.map((s) => ({ ...s, caseId: c.id })));
       setStatus(data.case.status);
-      setNotes(data.case.notes);
-      if (data.case.volume_url && (!volumeInfo || `uploaded-${volumeInfo.fileName}` !== c.id)) {
+      setNotes(sanitizeDemoText(data.case.notes));
+      if (data.case.volume_url && (!volumeInfo || volumeInfo.caseKey !== c.id)) {
         const niftiRes = await fetch(data.case.volume_url);
         if (niftiRes.ok) {
           const blob = await niftiRes.blob();
-          const file = new File([blob], data.case.volume_file_name ?? "volume.nii.gz");
+          const caseIndex = Math.max(0, savedCases.findIndex((item) => item.id === c.id));
+          const file = new File([blob], `${anonymizedCaseLabel(caseIndex).toLowerCase().replaceAll(" ", "-")}.nii.gz`);
           const parsed = await parseNiftiFile(file);
-          setVolumeInfo(parsed);
+          setVolumeInfo({ ...parsed, caseKey: c.id, fileName: anonymizedCaseLabel(caseIndex) });
           setActivePlane("axial");
           setSlice(Math.floor(getMaxSlice(parsed, "axial") / 2));
           resetViewport();
@@ -279,7 +300,7 @@ export default function MedicalAnnotationDemoPage() {
       setAnnotations((data.annotations ?? []).map((a) => ({ ...a, caseId: activeCaseId })));
       setSegmentations((data.segmentations ?? []).map((s) => ({ ...s, caseId: activeCaseId })));
       setStatus(data.status);
-      setNotes(data.notes);
+      setNotes(sanitizeDemoText(data.notes));
       setShowHistory(false);
       setSaveState("idle");
     } catch { setSaveState("error"); }
@@ -325,12 +346,15 @@ export default function MedicalAnnotationDemoPage() {
 
     try {
       const parsed = await parseNiftiFile(file);
-      volumeFileRef.current = file;
-      setVolumeInfo(parsed);
+      const caseKey = createAnonymizedCaseKey();
+      const displayName = "Demo MRI Upload";
+      const anonymizedFileName = `${caseKey}${niftiExtension(file.name)}`;
+      volumeFileRef.current = new File([file], anonymizedFileName, { type: file.type });
+      setVolumeInfo({ ...parsed, caseKey, fileName: displayName });
       setActivePlane("axial");
       setSlice(Math.floor(getMaxSlice(parsed, "axial") / 2));
       setStatus("in-progress");
-      setNotes(`Uploaded ${file.name}. Annotate relevant slices and export ML-ready JSON.`);
+      setNotes("Uploaded anonymized MRI volume. Annotate relevant slices and export ML-ready JSON.");
       setSaveState("idle");
       resetViewport();
     } catch (error) {
@@ -574,9 +598,9 @@ export default function MedicalAnnotationDemoPage() {
           annotations: caseAnnotations,
           segmentations: caseSegmentations,
           status,
-          notes,
+          notes: sanitizeDemoText(notes),
           modality: "NIfTI MRI",
-          region: volumeInfo?.fileName ?? "demo-volume",
+          region: volumeInfo?.fileName ?? "anonymized-demo-volume",
         }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -594,29 +618,29 @@ export default function MedicalAnnotationDemoPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${activeCaseId}-annotation-export.json`;
+    link.download = "anonymized-mri-annotation-export.json";
     link.click();
     URL.revokeObjectURL(url);
   }
 
   function exportSlicerMarkups() {
-    const payload = buildSlicerMarkups(caseAnnotations, volumeInfo, activeCaseId);
+    const payload = buildSlicerMarkups(caseAnnotations, volumeInfo, publicCaseLabel);
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${activeCaseId}-landmarks.mrk.json`;
+    link.download = "anonymized-mri-landmarks.mrk.json";
     link.click();
     URL.revokeObjectURL(url);
   }
 
   function exportSegmentationMask() {
-    const payload = buildSegmentationLabelmapExport(caseSegmentations, volumeInfo, activeCaseId);
+    const payload = buildSegmentationLabelmapExport(caseSegmentations, volumeInfo, publicCaseLabel);
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${activeCaseId}-segmentation-labelmap.json`;
+    link.download = "anonymized-mri-segmentation-labelmap.json";
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -627,7 +651,7 @@ export default function MedicalAnnotationDemoPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${activeCaseId}-segmentation-mask.nii.gz`;
+    link.download = "anonymized-mri-segmentation-mask.nii.gz";
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -732,10 +756,10 @@ export default function MedicalAnnotationDemoPage() {
             )}
 
             <div className="space-y-3">
-              {savedCases.map((c) => (
+              {savedCases.map((c, index) => (
                 <div key={c.id} className="flex items-center gap-4 rounded-2xl border border-white/[0.08] bg-[#0b1014]/70 px-5 py-4">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-white">{c.volume_file_name ?? c.id}</p>
+                    <p className="truncate font-semibold text-white">{anonymizedCaseLabel(index)}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
                       <span>{new Date(c.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
                       <span>·</span>
@@ -1545,7 +1569,8 @@ async function parseNiftiFile(file: File): Promise<VolumeInfo> {
     dims,
     pixDims: header.pixDims,
     affine: header.affine,
-    fileName: file.name,
+    fileName: "Anonymized MRI Volume",
+    caseKey: createAnonymizedCaseKey(),
   };
 }
 
@@ -1624,6 +1649,7 @@ function buildSlicerMarkups(points: AnnotationPoint[], volume: VolumeInfo | null
 
 function buildSegmentationLabelmapExport(strokes: SegmentationStroke[], volume: VolumeInfo | null, caseId: string) {
   const { dims, mask } = buildSegmentationMask(strokes, volume);
+  const sourceStrokes = strokes.map((stroke) => ({ ...stroke, caseId }));
 
   return {
     format: "saad-medical-annotation-segmentation-labelmap-v1",
@@ -1640,7 +1666,7 @@ function buildSegmentationLabelmapExport(strokes: SegmentationStroke[], volume: 
       2: { name: "organ", color: LABEL_STYLES.organ.color },
       3: { name: "exclude", color: LABEL_STYLES.exclude.color },
     },
-    sourceStrokes: strokes,
+    sourceStrokes,
     voxelCount: countNonZero(mask),
     encoding: {
       type: "run-length",
