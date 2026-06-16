@@ -8,6 +8,7 @@ import {
   isTrackerAllowlistConfigured,
   isTrackerEmailAllowed,
 } from "@/lib/auth";
+import { isTrackerDatabaseConfigured, listDailyTasks } from "@/lib/tracker-db";
 
 export const metadata = {
   title: "Daily Task Tracker",
@@ -22,10 +23,13 @@ export default async function TasksPage() {
   const email = session?.user?.email;
   const isAllowed = isTrackerEmailAllowed(email);
   const isConfigured =
+    isTrackerDatabaseConfigured &&
     isTrackerAllowlistConfigured &&
     process.env.GOOGLE_CLIENT_ID &&
     process.env.GOOGLE_CLIENT_SECRET &&
     process.env.NEXTAUTH_SECRET;
+  const tasks = isAllowed && isConfigured ? await listDailyTasks() : [];
+  const taskStateKey = tasks.map((task) => `${task.id}:${task.updated_at}`).join("|");
 
   return (
     <main className="min-h-screen bg-transparent text-white">
@@ -56,7 +60,9 @@ export default async function TasksPage() {
         {!isConfigured && <SetupNotice />}
         {!session && isConfigured && <LockedPanel />}
         {session && !isAllowed && <AccessDenied email={email} />}
-        {isAllowed && isConfigured && <DailyTaskTracker />}
+        {isAllowed && isConfigured && (
+          <DailyTaskTracker key={taskStateKey} initialTasks={tasks} />
+        )}
       </section>
     </main>
   );
@@ -67,7 +73,8 @@ function SetupNotice() {
     <div className="mb-8 rounded-3xl border border-yellow-300/20 bg-yellow-300/10 p-6 text-sm leading-7 text-yellow-100">
       <p className="font-semibold text-yellow-50">Setup required before this works in production.</p>
       <p className="mt-2 text-yellow-100/80">
-        Add these Vercel environment variables: <code>GOOGLE_CLIENT_ID</code>,{" "}
+        Add these Vercel environment variables: <code>DATABASE_URL</code>,{" "}
+        <code>GOOGLE_CLIENT_ID</code>,{" "}
         <code>GOOGLE_CLIENT_SECRET</code>, <code>NEXTAUTH_SECRET</code>, and{" "}
         <code>TRACKER_ALLOWED_EMAILS</code>.
       </p>

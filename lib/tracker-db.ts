@@ -77,6 +77,21 @@ export type OpportunityRow = {
   updated_at: string;
 };
 
+export type DailyTaskStatus = "Todo" | "In Progress" | "Done";
+export type DailyTaskPriority = "High" | "Medium" | "Low";
+
+export type DailyTaskRow = {
+  id: number;
+  title: string;
+  task_date: string;
+  duration_minutes: number;
+  elapsed_seconds: number;
+  status: DailyTaskStatus;
+  priority: DailyTaskPriority;
+  created_at: string;
+  updated_at: string;
+};
+
 export type DiscoveredOpportunity = {
   source: string;
   type: string;
@@ -222,6 +237,26 @@ export async function ensureProfessorContactsTable() {
   `;
 }
 
+export async function ensureDailyTasksTable() {
+  if (!sql) {
+    throw new Error("DATABASE_URL is not configured.");
+  }
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS daily_tasks (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      task_date DATE NOT NULL,
+      duration_minutes INTEGER NOT NULL DEFAULT 25,
+      elapsed_seconds INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'Todo',
+      priority TEXT NOT NULL DEFAULT 'High',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `;
+}
+
 export async function listApplications(): Promise<ApplicationRow[]> {
   if (!sql) {
     return [];
@@ -256,6 +291,43 @@ export async function listApplications(): Promise<ApplicationRow[]> {
   `;
 
   return rows as ApplicationRow[];
+}
+
+export async function listDailyTasks(): Promise<DailyTaskRow[]> {
+  if (!sql) {
+    return [];
+  }
+
+  await ensureDailyTasksTable();
+
+  const rows = await sql`
+    SELECT
+      id,
+      title,
+      task_date::text,
+      duration_minutes,
+      elapsed_seconds,
+      status,
+      priority,
+      created_at::text,
+      updated_at::text
+    FROM daily_tasks
+    ORDER BY
+      task_date DESC,
+      CASE status
+        WHEN 'In Progress' THEN 0
+        WHEN 'Todo' THEN 1
+        ELSE 2
+      END,
+      CASE priority
+        WHEN 'High' THEN 0
+        WHEN 'Medium' THEN 1
+        ELSE 2
+      END,
+      updated_at DESC;
+  `;
+
+  return rows as DailyTaskRow[];
 }
 
 export async function listProfessorContacts(): Promise<ProfessorContactRow[]> {
@@ -547,6 +619,40 @@ export async function createProfessorContact(formData: FormData) {
   `;
 }
 
+export async function createDailyTask(formData: FormData): Promise<DailyTaskRow> {
+  if (!sql) {
+    throw new Error("DATABASE_URL is not configured.");
+  }
+
+  await ensureDailyTasksTable();
+
+  const rows = await sql`
+    INSERT INTO daily_tasks (
+      title,
+      task_date,
+      duration_minutes,
+      priority
+    ) VALUES (
+      ${String(formData.get("title") || "")},
+      ${String(formData.get("task_date") || "")},
+      ${Number(formData.get("duration_minutes") || 25)},
+      ${String(formData.get("priority") || "High")}
+    )
+    RETURNING
+      id,
+      title,
+      task_date::text,
+      duration_minutes,
+      elapsed_seconds,
+      status,
+      priority,
+      created_at::text,
+      updated_at::text;
+  `;
+
+  return rows[0] as DailyTaskRow;
+}
+
 export async function approveOpportunity(id: number) {
   if (!sql) {
     throw new Error("DATABASE_URL is not configured.");
@@ -728,6 +834,27 @@ export async function updateOpportunityStatus(id: number, status: OpportunitySta
   `;
 }
 
+export async function updateDailyTaskProgress(
+  id: number,
+  status: DailyTaskStatus,
+  elapsedSeconds: number,
+) {
+  if (!sql) {
+    throw new Error("DATABASE_URL is not configured.");
+  }
+
+  await ensureDailyTasksTable();
+
+  await sql`
+    UPDATE daily_tasks
+    SET
+      status = ${status},
+      elapsed_seconds = ${Math.max(0, Math.floor(elapsedSeconds))},
+      updated_at = NOW()
+    WHERE id = ${id};
+  `;
+}
+
 export async function rejectAllNewOpportunities() {
   if (!sql) {
     throw new Error("DATABASE_URL is not configured.");
@@ -758,6 +885,15 @@ export async function deleteProfessorContact(id: number) {
 
   await ensureProfessorContactsTable();
   await sql`DELETE FROM professor_contacts WHERE id = ${id};`;
+}
+
+export async function deleteDailyTask(id: number) {
+  if (!sql) {
+    throw new Error("DATABASE_URL is not configured.");
+  }
+
+  await ensureDailyTasksTable();
+  await sql`DELETE FROM daily_tasks WHERE id = ${id};`;
 }
 
 function nullableString(value: FormDataEntryValue | null) {

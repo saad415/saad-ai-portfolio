@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   CalendarDays,
   Check,
@@ -12,13 +13,19 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
+import {
+  createDailyTaskAction,
+  deleteDailyTaskAction,
+  updateDailyTaskProgressAction,
+} from "@/app/tasks/actions";
+import type { DailyTaskPriority, DailyTaskRow, DailyTaskStatus } from "@/lib/tracker-db";
 
-type TaskStatus = "Todo" | "In Progress" | "Done";
-type TaskPriority = "High" | "Medium" | "Low";
+type TaskStatus = DailyTaskStatus;
+type TaskPriority = DailyTaskPriority;
 type StatusFilter = "All" | TaskStatus;
 
 type DailyTask = {
-  id: string;
+  id: number;
   title: string;
   date: string;
   durationMinutes: number;
@@ -28,7 +35,6 @@ type DailyTask = {
   createdAt: string;
 };
 
-const storageKey = "portfolio-daily-tasks-v1";
 const statusOptions: StatusFilter[] = ["All", "Todo", "In Progress", "Done"];
 const priorityOptions: TaskPriority[] = ["High", "Medium", "Low"];
 const hourOptions = Array.from({ length: 25 }, (_, index) => index);
@@ -55,53 +61,50 @@ function formatDuration(totalSeconds: number) {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
-function createId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+function mapTask(row: DailyTaskRow): DailyTask {
+  return {
+    id: row.id,
+    title: row.title,
+    date: row.task_date,
+    durationMinutes: row.duration_minutes,
+    elapsedSeconds: row.elapsed_seconds,
+    status: row.status,
+    priority: row.priority,
+    createdAt: row.created_at,
+  };
 }
 
-export default function DailyTaskTracker() {
+export default function DailyTaskTracker({ initialTasks }: { initialTasks: DailyTaskRow[] }) {
+  const router = useRouter();
   const todayKey = getLocalDateKey(new Date());
-  const [tasks, setTasks] = useState<DailyTask[]>([]);
+  const [tasks, setTasks] = useState<DailyTask[]>(() => initialTasks.map(mapTask));
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [title, setTitle] = useState("");
   const [durationMinutes, setDurationMinutes] = useState(25);
   const [priority, setPriority] = useState<TaskPriority>("High");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const [activeTaskId, setActiveTaskId] = useState<number | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    window.setTimeout(() => {
-      const storedTasks = window.localStorage.getItem(storageKey);
+  const persistTaskProgress = useCallback((taskId: number, nextStatus: TaskStatus, elapsedSeconds: number) => {
+    const formData = new FormData();
+    formData.set("id", String(taskId));
+    formData.set("status", nextStatus);
+    formData.set("elapsed_seconds", String(Math.max(0, Math.floor(elapsedSeconds))));
 
-      if (storedTasks) {
-        try {
-          setTasks(JSON.parse(storedTasks) as DailyTask[]);
-        } catch {
-          setTasks([]);
-        }
-      }
-
-      setHasLoaded(true);
-    }, 0);
-  }, []);
-
-  useEffect(() => {
-    if (hasLoaded) {
-      window.localStorage.setItem(storageKey, JSON.stringify(tasks));
-    }
-  }, [hasLoaded, tasks]);
+    startTransition(async () => {
+      await updateDailyTaskProgressAction(formData);
+      router.refresh();
+    });
+  }, [router, startTransition]);
 
   useEffect(() => {
     if (!activeTaskId) return;
 
     const intervalId = window.setInterval(() => {
       let shouldStopTimer = false;
+      let completedElapsedSeconds = 0;
 
       setTasks((currentTasks) => currentTasks.map((task) => {
         if (task.id !== activeTaskId || task.status === "Done") {
@@ -111,6 +114,7 @@ export default function DailyTaskTracker() {
         const plannedSeconds = task.durationMinutes * 60;
         const elapsedSeconds = Math.min(task.elapsedSeconds + 1, plannedSeconds);
         shouldStopTimer = elapsedSeconds >= plannedSeconds;
+        completedElapsedSeconds = elapsedSeconds;
 
         return {
           ...task,
@@ -121,11 +125,12 @@ export default function DailyTaskTracker() {
 
       if (shouldStopTimer) {
         setActiveTaskId(null);
+        persistTaskProgress(activeTaskId, "Done", completedElapsedSeconds);
       }
     }, 1000);
 
     return () => window.clearInterval(intervalId);
-  }, [activeTaskId]);
+  }, [activeTaskId, persistTaskProgress]);
 
   const visibleTasks = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -160,33 +165,39 @@ export default function DailyTaskTracker() {
     const cleanTitle = title.trim();
     if (!cleanTitle) return;
 
-    setTasks((currentTasks) => [
-      {
-        id: createId(),
-        title: cleanTitle,
-        date: selectedDate,
-        durationMinutes: Math.max(1, durationMinutes),
-        elapsedSeconds: 0,
-        status: "Todo",
-        priority,
-        createdAt: new Date().toISOString(),
-      },
-      ...currentTasks,
-    ]);
-    setTitle("");
+    const formData = new FormData();
+    formData.set("title", cleanTitle);
+    formData.set("task_date", selectedDate);
+    formData.set("duration_minutes", String(Math.max(1, durationMinutes)));
+    formData.set("priority", priority);
+
+    startTransition(async () => {
+      const task = await createDailyTaskAction(formData);
+      setTasks((currentTasks) => [mapTask(task), ...currentTasks]);
+      setTitle("");
+      router.refresh();
+    });
   }
 
-  function updateTask(taskId: string, update: Partial<DailyTask>) {
+  function updateTask(taskId: number, update: Partial<DailyTask>) {
     setTasks((currentTasks) => currentTasks.map((task) => (
       task.id === taskId ? { ...task, ...update } : task
     )));
   }
 
-  function deleteTask(taskId: string) {
+  function deleteTask(taskId: number) {
     setTasks((currentTasks) => currentTasks.filter((task) => task.id !== taskId));
     if (activeTaskId === taskId) {
       setActiveTaskId(null);
     }
+
+    const formData = new FormData();
+    formData.set("id", String(taskId));
+
+    startTransition(async () => {
+      await deleteDailyTaskAction(formData);
+      router.refresh();
+    });
   }
 
   function startTask(task: DailyTask) {
@@ -194,6 +205,12 @@ export default function DailyTaskTracker() {
 
     setActiveTaskId(task.id);
     updateTask(task.id, { status: "In Progress" });
+    persistTaskProgress(task.id, "In Progress", task.elapsedSeconds);
+  }
+
+  function pauseTask(task: DailyTask) {
+    setActiveTaskId(null);
+    persistTaskProgress(task.id, task.status === "Done" ? "Done" : "In Progress", task.elapsedSeconds);
   }
 
   return (
@@ -271,10 +288,11 @@ export default function DailyTaskTracker() {
 
           <button
             type="submit"
-            className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-teal-300 px-5 text-sm font-bold text-[#06100f] transition hover:bg-teal-200"
+            disabled={isPending}
+            className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-teal-300 px-5 text-sm font-bold text-[#06100f] transition hover:bg-teal-200 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Plus size={16} />
-            Add task
+            {isPending ? "Saving..." : "Add task"}
           </button>
         </form>
 
@@ -339,17 +357,20 @@ export default function DailyTaskTracker() {
                   task={task}
                   isActive={activeTaskId === task.id}
                   onStart={() => startTask(task)}
-                  onPause={() => setActiveTaskId(null)}
+                  onPause={() => pauseTask(task)}
                   onDone={() => {
+                    const plannedSeconds = task.durationMinutes * 60;
                     setActiveTaskId(null);
                     updateTask(task.id, {
-                      elapsedSeconds: task.durationMinutes * 60,
+                      elapsedSeconds: plannedSeconds,
                       status: "Done",
                     });
+                    persistTaskProgress(task.id, "Done", plannedSeconds);
                   }}
                   onReset={() => {
                     setActiveTaskId(null);
                     updateTask(task.id, { elapsedSeconds: 0, status: "Todo" });
+                    persistTaskProgress(task.id, "Todo", 0);
                   }}
                   onDelete={() => deleteTask(task.id)}
                 />
