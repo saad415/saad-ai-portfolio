@@ -43,6 +43,16 @@ const projects: Project[] = [
     href: "/projects/prostate-radiomics",
   },
   {
+    title: "MiniSpliceNet",
+    category: "Genomics Deep Learning",
+    categoryTag: "AI/ML",
+    description:
+      "PyTorch-based splice-site classification workflow for DNA sequence windows, with one-hot nucleotide encoding, a 1D CNN sequence classifier, stratified validation, and class-aware benchmark reporting.",
+    pipeline: ["DNA Windows", "One-Hot Encoding", "1D CNN", "Splice Class", "F1 Report"],
+    tech: ["Python", "PyTorch", "1D CNN", "Bioinformatics", "scikit-learn"],
+    href: "/projects/minisplicenet",
+  },
+  {
     title: "Topology-Aware Microstructure Platform",
     category: "Materials AI",
     categoryTag: "Research",
