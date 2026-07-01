@@ -29,7 +29,6 @@ export default async function TasksPage() {
     process.env.GOOGLE_CLIENT_SECRET &&
     process.env.NEXTAUTH_SECRET;
   const tasks = isAllowed && isConfigured ? await listDailyTasks() : [];
-  const taskStateKey = tasks.map((task) => `${task.id}:${task.updated_at}`).join("|");
 
   return (
     <main className="min-h-screen bg-transparent text-white">
@@ -60,9 +59,7 @@ export default async function TasksPage() {
         {!isConfigured && <SetupNotice />}
         {!session && isConfigured && <LockedPanel />}
         {session && !isAllowed && <AccessDenied email={email} />}
-        {isAllowed && isConfigured && (
-          <DailyTaskTracker key={taskStateKey} initialTasks={tasks} />
-        )}
+        {isAllowed && isConfigured && <DailyTaskTracker initialTasks={tasks} />}
       </section>
     </main>
   );

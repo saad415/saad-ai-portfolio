@@ -79,7 +79,6 @@ export async function updateDailyTaskProgressAction(formData: FormData) {
   }
 
   await updateDailyTaskProgress(id, status, elapsedSeconds);
-  revalidatePath("/tasks");
 }
 
 export async function deleteDailyTaskAction(formData: FormData) {

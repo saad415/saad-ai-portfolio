@@ -95,9 +95,8 @@ export default function DailyTaskTracker({ initialTasks }: { initialTasks: Daily
 
     startTransition(async () => {
       await updateDailyTaskProgressAction(formData);
-      router.refresh();
     });
-  }, [router, startTransition]);
+  }, [startTransition]);
 
   useEffect(() => {
     if (!activeTaskId) return;
