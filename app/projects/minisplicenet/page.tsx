@@ -4,7 +4,6 @@ import {
   BarChart3,
   Binary,
   BrainCircuit,
-  CheckCircle2,
   Dna,
   Layers3,
   Network,
@@ -196,24 +195,6 @@ export default function MiniSpliceNetPage() {
               annotation tasks such as FASTA/GTF-derived sequence modelling and
               transcriptomics-informed isoform analysis.
             </p>
-          </div>
-        </section>
-
-        <section className="mt-16 rounded-3xl border border-teal-300/20 bg-teal-300/[0.06] p-7">
-          <div className="flex items-start gap-4">
-            <CheckCircle2 className="mt-1 shrink-0 text-teal-300" size={24} />
-            <div>
-              <h2 className="text-2xl font-semibold">
-                Relevance to genome annotation research
-              </h2>
-              <p className="mt-3 max-w-4xl text-sm leading-7 text-teal-50/80">
-                MiniSpliceNet demonstrates the core engineering steps for deep
-                learning on biological sequences: sequence-window construction,
-                tensor encoding, model-component implementation, reproducible
-                training, and benchmark-style reporting for splice-site
-                classification and downstream genome annotation model development.
-              </p>
-            </div>
           </div>
         </section>
       </section>
